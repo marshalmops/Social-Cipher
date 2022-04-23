@@ -1,0 +1,28 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+    </qresource>
+    <qresource prefix="/views">
+        <file>LoginView.qml</file>
+        <file>DialogsView.qml</file>
+        <file>DialogMessagesView.qml</file>
+        <file>ViewBase.qml</file>
+    </qresource>
+    <qresource prefix="/sliders">
+        <file>VisualSettingsSlider.qml</file>
+        <file>ErrorSlider.qml</file>
+    </qresource>
+    <qresource prefix="/components">
+        <file>MessageDelegate.qml</file>
+        <file>DialogDelegate.qml</file>
+        <file>FlickableTextArea.qml</file>
+        <file>SimpleButton.qml</file>
+        <file>CustomTextInput.qml</file>
+        <file>BrandText.qml</file>
+        <file>TitleText.qml</file>
+        <file>BackButton.qml</file>
+    </qresource>
+    <qresource prefix="/attachments">
+        <file>Rancho-Regular.ttf</file>
+    </qresource>
+</RCC>
