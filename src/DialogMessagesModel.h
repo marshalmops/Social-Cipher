@@ -22,7 +22,8 @@ public:
     enum CommandCode : uint8_t {
         CC_INVALID = 0,
         CC_START_ENCRYPTION_INIT,
-        CC_END_ENCRYPTION_INIT
+        CC_END_ENCRYPTION_INIT,
+        CC_RESET_ENCRYPTION
     };
     
     static const QHash<CommandCode, QString>& getCommandsHash();
@@ -61,6 +62,7 @@ signals:
     void messageRowInserted();
     
     void encryptionStarted();
+    void encryptionReset();
     
 public slots:
     void setDialogMessagesModelFacades(std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogsMessagesFacade);
@@ -83,7 +85,7 @@ private:
     void processCommand(const CommandCode command,
                         const QString     &content);
     MessageEntity generateCommandMessage(const CommandCode command,
-                                         const QString     &content) const;
+                                         const QString     &content = QString()) const;
     
     QByteArray prepareEncodedString(const QString str)      const;
     QString    prepareDecodedBytes (const QByteArray bytes) const;

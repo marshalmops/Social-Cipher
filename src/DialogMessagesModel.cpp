@@ -7,7 +7,8 @@ const QHash<DialogMessagesModel::CommandCode, QString> &DialogMessagesModel::get
 {
     static QHash<CommandCode, QString> commandsHash = {
         {CommandCode::CC_START_ENCRYPTION_INIT, "SENI"},
-        {CommandCode::CC_END_ENCRYPTION_INIT,   "EENI"}
+        {CommandCode::CC_END_ENCRYPTION_INIT,   "EENI"},
+        {CommandCode::CC_RESET_ENCRYPTION,      "REEN"}
     };
     
     return commandsHash;
@@ -203,6 +204,14 @@ void DialogMessagesModel::startEncryption()
 void DialogMessagesModel::resetEncryption()
 {
     m_dialog->resetKeys();
+    
+    MessageEntity resetMessage = generateCommandMessage(CommandCode::CC_RESET_ENCRYPTION);
+    
+    auto err = m_dialogsMessagesFacade->sendMessage(resetMessage, m_dialog->getPeerId());
+    
+    if (err.isValid()) emit errorOccured(err);
+    
+    emit encryptionReset();
 }
 
 void DialogMessagesModel::setDialogMessagesModelFacades(std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogsMessagesFacade)
@@ -297,6 +306,13 @@ void DialogMessagesModel::processCommand(const CommandCode command,
             }
             
             emit encryptionStarted();
+            
+            break;
+        }
+        case CommandCode::CC_RESET_ENCRYPTION: {
+            m_dialog->resetKeys();
+            
+            emit encryptionReset();
             
             break;
         }

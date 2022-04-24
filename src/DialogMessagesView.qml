@@ -7,6 +7,7 @@ ViewBase {
     id: _root
     
     readonly property int messageWidthBreakpoint: 200
+    property bool isEncrypted: false
     
     ListView {
         id: messagesListView
@@ -142,14 +143,12 @@ ViewBase {
                         id: _resetEncryptionButton
                         
                         text: qsTr("Reset")
-                        enabled: isEncypted
+                        enabled: isEncrypted
                         
                         width: 70
                         
                         onClicked: {
                             dialogMessagesModel.resetEncryption();
-                            
-                            isEncypted = false;
                         }
                     }
                 }
@@ -169,7 +168,11 @@ ViewBase {
         }
         
         function onEncryptionStarted() {
-            isEncypted = true;
+            isEncrypted = true;
+        }
+        
+        function onEncryptionReset() {
+            isEncrypted = false;
         }
     }
 }
