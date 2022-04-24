@@ -36,6 +36,8 @@ Button {
         _background.gradient = basicBackground
     }
     
+    onEnabledChanged: _background.gradient = (_button.enabled ? basicBackground : disabledBackground);
+    
     // gradients:
     
     Gradient {
@@ -50,5 +52,12 @@ Button {
         orientation: Gradient.Horizontal
         GradientStop { position: 0.0; color: "#1FDE9A"}
         GradientStop { position: 1.0; color: "#5EF4BF"}
+    }
+    
+    Gradient {
+        id: disabledBackground
+        orientation: Gradient.Horizontal
+        GradientStop { position: 0.0; color: "#A6A39F"}
+        GradientStop { position: 1.0; color: "#BBB8B4"}
     }
 }

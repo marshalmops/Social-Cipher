@@ -121,7 +121,18 @@ ViewBase {
                         width: 70
                         
                         onClicked: {
+                            _encryptButton.enabled = false;
+                            
                             dialogMessagesModel.startEncryprion();
+                            
+                            _encryptionRetryTimer.start();
+                        }
+                        
+                        Timer {
+                            id: _encryptionRetryTimer
+                            
+                            interval: 5000
+                            onTriggered: _encryptButton.enabled = true;
                         }
                     }
                 }

@@ -13,8 +13,13 @@ Rectangle {
     default property int messageRectWidth
     
     Component.onCompleted: {
-        if (isLocal) _messageWrapper.anchors.right = root.right;
-        else         _messageWrapper.anchors.left  = root.left;
+        if (isLocal) {
+            _messageWrapper.anchors.right = root.right;
+            
+        } else {
+            _messageWrapper.anchors.left  = root.left;
+            
+        }
     }
     
     color: Qt.rgba(0, 0, 0, 0)
@@ -39,6 +44,7 @@ Rectangle {
                 id: _messageText
                 
                 width: parent.width
+                rightPadding: 10
                 
                 wrapMode: Text.Wrap
                 text: messageText
