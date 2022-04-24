@@ -30,14 +30,16 @@ public:
     static const CommandCode getCommandCodeByString(const QString &command);
     static const QString     getStringByCommandCode(const CommandCode code);
     
-    constexpr static const char* C_MESSAGE_ORIGIN  = "isLocalMessage";
-    constexpr static const char* C_MESSAGE_CONTENT = "messageContent";
-    constexpr static const char* C_MESSAGE_TIME    = "messageTime";
+    constexpr static const char* C_MESSAGE_ORIGIN            = "isLocalMessage";
+    constexpr static const char* C_MESSAGE_CONTENT           = "messageContent";
+    constexpr static const char* C_MESSAGE_TIME              = "messageTime";
+    constexpr static const char* C_MESSAGE_ENCRYPTION_STATUS = "isMessageEncypted";
     
     enum UserRolesIds : uint16_t {
         URI_MESSAGE_ORIGIN = Qt::UserRole + 1,
         URI_MESSAGE_CONTENT,
         URI_MESSAGE_TIME,
+        URI_MESSAGE_ENCRYPTION_STATUS,
         URI_COUNT
     };
     
@@ -58,6 +60,8 @@ signals:
     
     void messageRowInserted();
     
+    void encryptionStarted();
+    
 public slots:
     void setDialogMessagesModelFacades(std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogsMessagesFacade);
     
@@ -67,7 +71,8 @@ public slots:
     void sendMessage  (const QString message);      // qml.
     void appendMessage(const MessageEntity message);
     
-    void startEncryprion(); // qml
+    void startEncryption(); // qml
+    void resetEncryption(); // qml
     
 private:
     void resetModelContent();

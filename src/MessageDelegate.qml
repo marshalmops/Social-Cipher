@@ -6,9 +6,10 @@ Rectangle {
     
     height: _messageWrapper.height
     
-    property string messageText: ""
-    property string messageDate: ""
-    property bool   isLocal:     false
+    property string messageText:            ""
+    property string messageDate:            ""
+    property bool   isLocal:                false
+    property bool   messageEncryptedStatus: false
     
     default property int messageRectWidth
     
@@ -27,7 +28,7 @@ Rectangle {
     Rectangle {
         id: _messageWrapper
         
-        height: _messageText.contentHeight + _messageDate.contentHeight + _messageColumn.spacing + _messageColumn.padding * 2
+        height: _messageEncryptionStatus.height + _messageText.contentHeight + _messageDate.contentHeight + _messageColumn.spacing + _messageColumn.padding * 2
         width:  messageRectWidth
         
         border.width: 1
@@ -57,6 +58,21 @@ Rectangle {
                 horizontalAlignment: (isLocal ? Text.AlignLeft : Text.AlignRight)
                 
                 text: messageDate
+            }
+            
+            Rectangle {
+                id: _messageEncryptionStatus
+                
+                width: 10
+                height: width
+                radius: width / 2
+                
+                border {
+                    width: 1
+                    color: "#626262"
+                }
+                
+                color: (root.messageEncryptedStatus ? "green" : "red")
             }
         }
     }

@@ -116,7 +116,7 @@ bool EntityJsonParserVK::jsonEventsToMessages(const QJsonValue &json,
         MessageEntity::EntityId messagePeer     {curEvent[EF_PEER_ID].toInt()};
         MessageEntity::EntityId messageId       {curEvent[EF_MESSAGE_ID].toInt()};
         
-        MessageEntity newMessage{messageText, (messageFlag & MF_LOCAL ? 0 : messagePeer), messagePeer, messageId, messageTimestamp};
+        MessageEntity newMessage{messageText, false, (messageFlag & MF_LOCAL ? 0 : messagePeer), messagePeer, messageId, messageTimestamp};
         
         if (!newMessage.isValid()) return false;
         
@@ -153,7 +153,7 @@ bool EntityJsonParserVK::jsonStandardToMessages(const QJsonValue &json,
         MessageEntity::EntityId messageFromId   {curMessage[C_FROM_ID_FIELD_NAME].toInt()};
         MessageEntity::EntityId messageId       {curMessage[C_MESSAGE_ID_FIELD_NAME].toInt()};
         
-        MessageEntity newMessage{messageText, messageFromId, messagePeer, messageId, messageTimestamp};
+        MessageEntity newMessage{messageText, false, messageFromId, messagePeer, messageId, messageTimestamp};
         
         if (!newMessage.isValid()) return false;
         

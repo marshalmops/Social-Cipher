@@ -6,15 +6,17 @@ MessageEntity::MessageEntity()
 }
 
 MessageEntity::MessageEntity(const QString &text, 
+                             const bool isEncrypted, 
                              const EntityId fromId,
                              const EntityId peerId,
                              const EntityId messageId,
                              const QDateTime &time)
-    : m_text     {text},
-      m_fromId   {fromId},
-      m_peerId   {peerId},
-      m_messageId{messageId},
-      m_time     {time}
+    : m_text        {text},
+      m_isEncrypted {isEncrypted},
+      m_fromId      {fromId},
+      m_peerId      {peerId},
+      m_messageId   {messageId},
+      m_time        {time}
 {
     
 }
@@ -49,6 +51,11 @@ bool MessageEntity::isLocal() const
     if (m_fromId == m_peerId) return false;
     
     return true;
+}
+
+bool MessageEntity::isEncrypted() const
+{
+    return m_isEncrypted;
 }
 
 bool MessageEntity::isValid() const

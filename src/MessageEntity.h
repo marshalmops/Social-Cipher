@@ -8,6 +8,7 @@ class MessageEntity : public EntityInterface
 public:
     MessageEntity();
     MessageEntity(const QString &text,
+                  const bool isEncrypted = false,
                   const EntityId fromId = 0,
                   const EntityId peerId = 0,
                   const EntityId messageId = 0,
@@ -22,6 +23,7 @@ public:
           EntityId   getPeerId()    const;
           EntityId   getMessageId() const;
           bool       isLocal()      const;
+          bool       isEncrypted()  const;
     
     virtual bool isValid() const override;
     
@@ -33,6 +35,8 @@ private:
     
     EntityId m_fromId;
     EntityId m_peerId;
+    
+    bool m_isEncrypted;
 };
 
 #endif // MESSAGEENTITY_H

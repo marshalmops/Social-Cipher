@@ -64,9 +64,10 @@ QVariant DialogMessagesModel::data(const QModelIndex &index, int role) const
         return data;
     
     switch (role) {
-        case UserRolesIds::URI_MESSAGE_ORIGIN:  data = curMessage.isLocal(); break;
-        case UserRolesIds::URI_MESSAGE_CONTENT: data = curMessage.getText(); break;
-        case UserRolesIds::URI_MESSAGE_TIME:    data = curMessage.getTime().toString("hh:mm"); break;
+        case UserRolesIds::URI_MESSAGE_ORIGIN:            data = curMessage.isLocal(); break;
+        case UserRolesIds::URI_MESSAGE_CONTENT:           data = curMessage.getText(); break;
+        case UserRolesIds::URI_MESSAGE_TIME:              data = curMessage.getTime().toString("hh:mm"); break;
+        case UserRolesIds::URI_MESSAGE_ENCRYPTION_STATUS: data = curMessage.isEncrypted(); break;
     }
     
     return data;
@@ -75,9 +76,10 @@ QVariant DialogMessagesModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> DialogMessagesModel::roleNames() const
 {
     static QHash<int, QByteArray> rolesHash = {
-        {UserRolesIds::URI_MESSAGE_ORIGIN,  C_MESSAGE_ORIGIN},
-        {UserRolesIds::URI_MESSAGE_CONTENT, C_MESSAGE_CONTENT},
-        {UserRolesIds::URI_MESSAGE_TIME,    C_MESSAGE_TIME}
+        {UserRolesIds::URI_MESSAGE_ORIGIN,            C_MESSAGE_ORIGIN},
+        {UserRolesIds::URI_MESSAGE_CONTENT,           C_MESSAGE_CONTENT},
+        {UserRolesIds::URI_MESSAGE_TIME,              C_MESSAGE_TIME},
+        {UserRolesIds::URI_MESSAGE_ENCRYPTION_STATUS, C_MESSAGE_ENCRYPTION_STATUS}
     };
     
     return rolesHash;
@@ -104,7 +106,7 @@ void DialogMessagesModel::sendMessage(const QString message)
     } else
         processedMessage = message;
     
-    MessageEntity messageToSend{processedMessage, 0, m_dialog->getPeerId(), 0, QDateTime::currentDateTime()};
+    MessageEntity messageToSend{processedMessage, isEncrypted, 0, m_dialog->getPeerId(), 0, QDateTime::currentDateTime()};
     
     if (!messageToSend.isValid()) return;
     
@@ -116,7 +118,7 @@ void DialogMessagesModel::sendMessage(const QString message)
         return;
     }
     
-    insertMessageRow(isEncrypted ? MessageEntity{message, 0, m_dialog->getPeerId(), 0, QDateTime::currentDateTime()} : messageToSend);
+    insertMessageRow(isEncrypted ? MessageEntity{message, isEncrypted, 0, m_dialog->getPeerId(), 0, QDateTime::currentDateTime()} : messageToSend);
 }
 
 void DialogMessagesModel::setDialogMessages(std::shared_ptr<DialogEntity> dialog)
@@ -168,10 +170,10 @@ void DialogMessagesModel::appendMessage(const MessageEntity message)
         }
     }
     
-    insertMessageRow(MessageEntity{messageText, message.getFromId(), message.getPeerId(), message.getMessageId(), message.getTime()});
+    insertMessageRow(MessageEntity{messageText, m_dialog->isEncrypted(), message.getFromId(), message.getPeerId(), message.getMessageId(), message.getTime()});
 }
 
-void DialogMessagesModel::startEncryprion()
+void DialogMessagesModel::startEncryption()
 {
     m_dialog->resetKeys();
     
@@ -196,6 +198,11 @@ void DialogMessagesModel::startEncryprion()
     auto err = m_dialogsMessagesFacade->sendMessage(response, m_dialog->getPeerId());
     
     if (err.isValid()) emit errorOccured(err);
+}
+
+void DialogMessagesModel::resetEncryption()
+{
+    m_dialog->resetKeys();
 }
 
 void DialogMessagesModel::setDialogMessagesModelFacades(std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogsMessagesFacade)
@@ -275,19 +282,21 @@ void DialogMessagesModel::processCommand(const CommandCode command,
             
             if (err.isValid()) emit errorOccured(err);
             
+            emit encryptionStarted();
+            
             break;
         }
         case CommandCode::CC_END_ENCRYPTION_INIT: {
             auto remotePublicKey {prepareEncodedString(content)};
-            
-            qInfo() << (remotePublicKey == m_dialog->getLocalPuplicKey().getBytes());
-        
+
             if (!m_dialog->setRemoteKey(CipherKey(remotePublicKey)))
             {
                 emit errorOccured(Error{"Keys setting error!", true});
                 
                 return;
             }
+            
+            emit encryptionStarted();
             
             break;
         }

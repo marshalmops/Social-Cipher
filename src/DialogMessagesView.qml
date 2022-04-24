@@ -4,6 +4,7 @@ import QtQuick.Layouts 1.15
 import "qrc:/components"
 
 ViewBase {
+    id: _root
     
     readonly property int messageWidthBreakpoint: 200
     
@@ -57,9 +58,10 @@ ViewBase {
             
             messageRectWidth: (messagesListView.width > messageWidthBreakpoint ? messagesListView.width * 0.8 : messagesListView.width)
             
-            messageText: messageContent
-            messageDate: messageTime
-            isLocal:     isLocalMessage
+            messageText:            messageContent
+            messageDate:            messageTime
+            isLocal:                isLocalMessage
+            messageEncryptedStatus: isMessageEncypted
         }
         
         footerPositioning: ListView.OverlayFooter
@@ -123,7 +125,7 @@ ViewBase {
                         onClicked: {
                             _encryptButton.enabled = false;
                             
-                            dialogMessagesModel.startEncryprion();
+                            dialogMessagesModel.startEncryption();
                             
                             _encryptionRetryTimer.start();
                         }
@@ -133,6 +135,21 @@ ViewBase {
                             
                             interval: 5000
                             onTriggered: _encryptButton.enabled = true;
+                        }
+                    }
+                    
+                    SimpleButton {
+                        id: _resetEncryptionButton
+                        
+                        text: qsTr("Reset")
+                        enabled: isEncypted
+                        
+                        width: 70
+                        
+                        onClicked: {
+                            dialogMessagesModel.resetEncryption();
+                            
+                            isEncypted = false;
                         }
                     }
                 }
@@ -149,6 +166,10 @@ ViewBase {
         
         function onMessageRowInserted() {
             messagesListView.positionViewAtEnd();
+        }
+        
+        function onEncryptionStarted() {
+            isEncypted = true;
         }
     }
 }
