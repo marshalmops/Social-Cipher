@@ -28,24 +28,27 @@ Rectangle {
     Rectangle {
         id: _messageWrapper
         
-        height: _messageEncryptionStatus.height + _messageText.contentHeight + _messageDate.contentHeight + _messageColumn.spacing + _messageColumn.padding * 2
-        width:  messageRectWidth
+        height: _messageEncryptionStatus.height + _messageText.contentHeight + _messageDate.contentHeight + _messageColumn.spacing * 2 + _messageText.topPadding * 2 //+ _messageColumn.padding * 3
+        width: messageRectWidth
         
         border.width: 1
         border.color: "darkgrey"
             
-        Column {
+        ColumnLayout {
             id: _messageColumn
             
             width: parent.width
             spacing: 5
-            padding: 5
+//            padding: 5
             
             Text {
                 id: _messageText
                 
-                width: parent.width
+                Layout.fillWidth: true
+                //width: messageRectWidth
+                topPadding: _messageColumn.spacing
                 rightPadding: 10
+                leftPadding: 10
                 
                 wrapMode: Text.Wrap
                 text: messageText
@@ -54,8 +57,11 @@ Rectangle {
             Text {
                 id: _messageDate
                 
-                width: parent.width - _messageColumn.padding * 2
-                horizontalAlignment: (isLocal ? Text.AlignLeft : Text.AlignRight)
+                //width: parent.width - _messageColumn.padding * 2
+                //horizontalAlignment: (isLocal ? Text.AlignLeft : Text.AlignRight)
+                Layout.alignment: (isLocal ? Qt.AlignLeft : Qt.AlignRight)
+                rightPadding: 10
+                leftPadding: 10
                 
                 text: messageDate
             }
@@ -66,6 +72,10 @@ Rectangle {
                 width: 10
                 height: width
                 radius: width / 2
+                
+                Layout.alignment: (isLocal ? Qt.AlignLeft : Qt.AlignRight)
+                Layout.rightMargin: (isLocal ? 0  : 10)
+                Layout.leftMargin:  (isLocal ? 10 : 0)
                 
                 border {
                     width: 1
