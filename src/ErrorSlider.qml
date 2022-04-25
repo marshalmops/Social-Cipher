@@ -88,8 +88,4 @@ Rectangle {
             }
         }
     }
-    
-    Connections {
-        
-    }
 }

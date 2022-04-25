@@ -40,10 +40,10 @@ Error NetworkDialogMessagesFacadeVK::sendMessage(const MessageEntity &message,
     QJsonObject response;
     
     if (!m_requestExecutor->executePostRequest(QUrl(requestString, QUrl::TolerantMode), payload.toString(QUrl::FullyEncoded).toUtf8(), response))//executeGetRequest(QUrl(requestString, QUrl::TolerantMode), response))
-        return Error{"Sending message error!", true};
+        return (m_lastError = Error{"Sending message error!", true});
     
     if (response.contains("error"))
-        return Error{QString("Sending message error! ") + response["error"].toString(), true};
+        return (m_lastError = Error{QString("Sending message error! ") + response["error"].toString(), true});
 
     return Error{};
 }
@@ -59,7 +59,7 @@ Error NetworkDialogMessagesFacadeVK::tryGetMessages(std::vector<MessageEntity> &
         
         m_lastTs = networkSettings->getAdditionalPropValue(NetworkFacadeVK::C_LONGPOLL_TS_PROP_NAME).toULongLong(&isConvOK);
         
-        if (!isConvOK) return Error{"Long poll ts param value isn't correct!", true};
+        if (!isConvOK) return (m_lastError = Error{"Long poll ts param value isn't correct!", true});
     }
     
     QString requestString{};
@@ -83,13 +83,13 @@ Error NetworkDialogMessagesFacadeVK::tryGetMessages(std::vector<MessageEntity> &
     if (jsonReply.contains("failed") || !(jsonReply.contains(NetworkFacadeVK::C_LONGPOLL_TS_PROP_NAME)
      && jsonReply.contains("updates")))
     {
-        return Error{"Long poll messages getting error!", true};
+        return (m_lastError = Error{"Long poll messages getting error!", true});
     }
     
     auto rawTsValue = jsonReply[NetworkFacadeVK::C_LONGPOLL_TS_PROP_NAME].toVariant().toULongLong();
     
     if (rawTsValue == 0 || m_lastTs > rawTsValue) {
-        return Error{"Long poll messages getting error!", true};
+        return (m_lastError = Error{"Long poll messages getting error!", true});
     }
     
     m_lastTs = rawTsValue;
@@ -97,7 +97,7 @@ Error NetworkDialogMessagesFacadeVK::tryGetMessages(std::vector<MessageEntity> &
     std::vector<MessageEntity> messagesBuffer;
     
     if (!m_entityParser->jsonToMessages(jsonReply["updates"], EntityJsonParserVK::MessageParsingFlag::MPF_IS_EVENT, messagesBuffer))
-        return Error{"Incoming messages parsing error!", true};
+        return (m_lastError = Error{"Incoming messages parsing error!", true});
     
     // events has reversed order:
     
@@ -125,10 +125,10 @@ Error NetworkDialogMessagesFacadeVK::getDialogMessages(const EntityInterface::En
     Error       err{"Getting messages error!", true};
     
     if (!m_requestExecutor->executeGetRequest(QUrl(requestString, QUrl::TolerantMode), jsonReply))
-        return err;
+        return (m_lastError = err);
     
     if (jsonReply.contains("error"))
-        return Error{QString("Getting messages error! ") + jsonReply["error"].toObject()["error_msg"].toString(), true};
+        return (m_lastError = Error{QString("Getting messages error! ") + jsonReply["error"].toObject()["error_msg"].toString(), true});
     
     if (!jsonReply.contains("response"))   return err;
     if (!jsonReply["response"].isObject()) return err;
@@ -140,7 +140,7 @@ Error NetworkDialogMessagesFacadeVK::getDialogMessages(const EntityInterface::En
     std::vector<MessageEntity> messagesBuffer;
     
     if (!m_entityParser->jsonToMessages(jsonReply["items"], 0, messagesBuffer))
-        return err;
+        return (m_lastError = err);
     
     std::reverse(messagesBuffer.begin(), messagesBuffer.end());
     

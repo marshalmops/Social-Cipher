@@ -23,24 +23,24 @@ Error NetworkLoginFacadeVK::initializeWithToken(const QString token)
     QJsonObject jsonReply;
     
     if (!m_requestExecutor->executeGetRequest(QUrl(requestString, QUrl::TolerantMode), jsonReply))
-        return err;
+        return (m_lastError = err);
     
     if (jsonReply.contains("error"))
-        return Error{err.getText() + jsonReply["error"].toString()};
+        return (m_lastError = Error{err.getText() + jsonReply["error"].toString()});
     
     err = Error{"Gotten login info validation is failed!", true};
     
-    if (!jsonReply.contains("response"))   return err;
-    if (!jsonReply["response"].isObject()) return err;
+    if (!jsonReply.contains("response"))   return (m_lastError = err);
+    if (!jsonReply["response"].isObject()) return (m_lastError = err);
     
     jsonReply = jsonReply["response"].toObject();
     
-    if (!jsonReply.contains("id")) return err;
+    if (!jsonReply.contains("id")) return (m_lastError = err);
     
     bool isConvOK{false};
     auto rawId = jsonReply["id"].toVariant().toLongLong(&isConvOK);
     
-    if (!isConvOK) return err;
+    if (!isConvOK) return (m_lastError = err);
     
     networkSettings->setToken(token.toUtf8());
     networkSettings->setLocalPeerId(rawId);

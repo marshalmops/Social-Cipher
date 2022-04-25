@@ -64,6 +64,8 @@ signals:
     void encryptionStarted();
     void encryptionReset();
     
+    void modelReset();
+    
 public slots:
     void setDialogMessagesModelFacades(std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogsMessagesFacade);
     
@@ -75,6 +77,8 @@ public slots:
     
     void startEncryption(); // qml
     void resetEncryption(); // qml
+    
+    void resetModel();
     
 private:
     void resetModelContent();

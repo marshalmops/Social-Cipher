@@ -12,6 +12,9 @@
 class AppExecutionManager : public QObject
 {
     Q_OBJECT
+    
+    constexpr static const uint8_t C_QUITING_POINTS_COUNT = 2;
+    
 public:
     AppExecutionManager(QGuiApplication *app,
                         QObject *parent = nullptr);
@@ -44,7 +47,9 @@ signals:
 private:
     QGuiApplication *m_app;
     
-    bool m_isQuitingEnded;
+    bool    m_isQuitingStarted;
+    bool    m_isQuitingEnded;
+    uint8_t m_quitingCounter;
 };
 
 #endif // APPEXECUTIONMANAGER_H

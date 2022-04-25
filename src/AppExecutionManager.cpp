@@ -2,9 +2,11 @@
 
 AppExecutionManager::AppExecutionManager(QGuiApplication *app, 
                                          QObject *parent)
-    : QObject         {parent},
-      m_app           {app},
-      m_isQuitingEnded{false}
+    : QObject           {parent},
+      m_app             {app},
+      m_quitingCounter  {0},
+      m_isQuitingEnded  {false},
+      m_isQuitingStarted{false}
 {
     
 }
@@ -16,7 +18,9 @@ void AppExecutionManager::processOccuredError(Error err)
 
 void AppExecutionManager::processQuitRequest()
 {
-    if (m_isQuitingEnded) return;
+    if (m_isQuitingStarted) return;
+    
+    m_isQuitingStarted = true;
     
     qInfo() << "processQuitRequest() is called!";
     
@@ -35,6 +39,10 @@ void AppExecutionManager::processQuitRequest()
 void AppExecutionManager::moduleExecEnded()
 {
     // checking condition...
+    
+    ++m_quitingCounter;
+    
+    if (m_quitingCounter != C_QUITING_POINTS_COUNT) return;
     
     m_isQuitingEnded = true;
     m_app->quit();

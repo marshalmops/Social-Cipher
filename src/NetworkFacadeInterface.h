@@ -15,9 +15,11 @@ public:
     virtual bool initialize() = 0;
     
     std::shared_ptr<NetworkRequestExecutorInterface> getExecutor() const;
+    Error getLastError() const;
     
 protected:
     std::shared_ptr<NetworkRequestExecutorInterface> m_requestExecutor;
+    mutable Error m_lastError;
 };
 
 #endif // NETWORKFACADEINTERFACE_H

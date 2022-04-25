@@ -203,15 +203,28 @@ void DialogMessagesModel::startEncryption()
 
 void DialogMessagesModel::resetEncryption()
 {
+    if (!m_dialog->isEncrypted()) return;
+    
     m_dialog->resetKeys();
     
     MessageEntity resetMessage = generateCommandMessage(CommandCode::CC_RESET_ENCRYPTION);
+    
+    if (m_dialogsMessagesFacade->getLastError().isValid()) return;
     
     auto err = m_dialogsMessagesFacade->sendMessage(resetMessage, m_dialog->getPeerId());
     
     if (err.isValid()) emit errorOccured(err);
     
     emit encryptionReset();
+}
+
+void DialogMessagesModel::resetModel()
+{
+    if (!m_dialog.get()) return;
+    
+    resetEncryption();
+    
+    emit modelReset();
 }
 
 void DialogMessagesModel::setDialogMessagesModelFacades(std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogsMessagesFacade)
@@ -310,6 +323,8 @@ void DialogMessagesModel::processCommand(const CommandCode command,
             break;
         }
         case CommandCode::CC_RESET_ENCRYPTION: {
+            if (!m_dialog->isEncrypted()) return;
+        
             m_dialog->resetKeys();
             
             emit encryptionReset();

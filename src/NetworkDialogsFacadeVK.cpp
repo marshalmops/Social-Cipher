@@ -21,10 +21,10 @@ Error NetworkDialogsFacadeVK::getDialogs(std::vector<DialogEntity> &dialogs)
     Error       err{"Getting dialogs error!", true};
     
     if (!m_requestExecutor->executeGetRequest(QUrl(requestString, QUrl::TolerantMode), jsonReply))
-        return err;
+        return (m_lastError = err);
     
     if (jsonReply.contains("error"))
-        return Error{QString("Sending message error! ") + jsonReply["error"].toString(), true};
+        return (m_lastError = Error{QString("Sending message error! ") + jsonReply["error"].toString(), true});
     
     if (!jsonReply.contains("response"))   return err;
     if (!jsonReply["response"].isObject()) return err;
@@ -32,12 +32,12 @@ Error NetworkDialogsFacadeVK::getDialogs(std::vector<DialogEntity> &dialogs)
     jsonReply = jsonReply["response"].toObject();
     
     if (!jsonReply.contains("items") || !jsonReply.contains("profiles") || !jsonReply.contains("groups"))
-        return err;
+        return (m_lastError = err);
     
     std::vector<DialogEntity> dialogsBuffer;
     
     if (!m_entityParser->jsonToDialogs(jsonReply, dialogsBuffer))
-        return err;
+        return (m_lastError = err);
     
     dialogs = std::move(dialogsBuffer);
     
