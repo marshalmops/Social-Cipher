@@ -13,6 +13,8 @@ public:
     
     virtual Error check(std::vector<MessageEntity> &newMessages) = 0;
     
+    void abortCurrentCheck();
+    
 //    virtual void prepare() = 0;
     
 protected:

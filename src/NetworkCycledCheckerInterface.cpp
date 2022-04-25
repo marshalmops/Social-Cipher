@@ -5,3 +5,8 @@ NetworkCycledCheckerInterface::NetworkCycledCheckerInterface(std::unique_ptr<Net
 {
     
 }
+
+void NetworkCycledCheckerInterface::abortCurrentCheck()
+{
+    m_dialogMessagesFacade->abortCurrentRequest();
+}

@@ -62,7 +62,7 @@ bool AppInitializer::initializeApp(QGuiApplication                         *app,
     QObject::connect(networkCheckingManager, &NetworkCheckingManager::errorOccured,       appExecManager.get(), &AppExecutionManager::processOccuredError, Qt::QueuedConnection);
     QObject::connect(networkCheckingManager, &NetworkCheckingManager::execEnded,          appExecManager.get(), &AppExecutionManager::moduleExecEnded,     Qt::QueuedConnection);    
     
-    QObject::connect(networkLayerCreator.get(), &NetworkLayerCreator::setCycledChecker,              networkCheckingManager, &NetworkCheckingManager::setCycledChecker, Qt::QueuedConnection);
+    QObject::connect(networkLayerCreator.get(), &NetworkLayerCreator::setCycledChecker,              networkCheckingManager,       &NetworkCheckingManager::setCycledChecker, Qt::QueuedConnection);
     QObject::connect(networkLayerCreator.get(), &NetworkLayerCreator::setLoginModelFacades,          loginModel.get(),             &LoginModel::setLoginModelFacades);
     QObject::connect(networkLayerCreator.get(), &NetworkLayerCreator::setDialogsModelFacades,        dialogsModel.get(),           &DialogsModel::setDialogsModelFacades);
     QObject::connect(networkLayerCreator.get(), &NetworkLayerCreator::setDialogMessagesModelFacades, dialogMessagesModel.get(),    &DialogMessagesModel::setDialogMessagesModelFacades);

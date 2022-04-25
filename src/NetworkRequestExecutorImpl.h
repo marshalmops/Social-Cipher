@@ -22,6 +22,8 @@ public:
                                     const QByteArray &postPayload,
                                     QJsonObject &jsonResponse,
                                     const uint32_t timeout) override;
+    
+    virtual void abortCurrentRequest() override;
 //    virtual void prepare() override;
     
 protected:
@@ -31,6 +33,7 @@ protected:
 private:
     QNetworkAccessManager m_networkManager;
     
+    QNetworkReply *m_currentNetworkReply;
 };
 
 #endif // NETWORKREQUESTEXECUTORIMPL_H

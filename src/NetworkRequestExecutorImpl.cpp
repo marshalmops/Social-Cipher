@@ -1,7 +1,8 @@
 #include "NetworkRequestExecutorImpl.h"
 
 NetworkRequestExecutorImpl::NetworkRequestExecutorImpl(QObject *parent)
-    : m_networkManager{}
+    : m_networkManager     {},
+      m_currentNetworkReply{nullptr}
 {
     if (parent) m_networkManager.moveToThread(parent->thread());
 }
@@ -42,6 +43,11 @@ bool NetworkRequestExecutorImpl::executePostRequest(const QUrl &url,
     return true;
 }
 
+void NetworkRequestExecutorImpl::abortCurrentRequest()
+{
+    m_currentNetworkReply->abort();
+}
+
 //void NetworkRequestExecutorImpl::prepare()
 //{
 //    m_networkManager.moveToThread(QThread::currentThread());
@@ -50,6 +56,8 @@ bool NetworkRequestExecutorImpl::executePostRequest(const QUrl &url,
 bool NetworkRequestExecutorImpl::getResponse(QNetworkReply *const reply,
                                              QJsonObject &jsonResponse)
 {
+    m_currentNetworkReply = reply;
+    
     QEventLoop eventLoop;
     
     QObject::connect(reply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);

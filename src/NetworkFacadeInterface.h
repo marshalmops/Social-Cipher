@@ -17,6 +17,8 @@ public:
     std::shared_ptr<NetworkRequestExecutorInterface> getExecutor() const;
     Error getLastError() const;
     
+    void abortCurrentRequest();
+    
 protected:
     std::shared_ptr<NetworkRequestExecutorInterface> m_requestExecutor;
     mutable Error m_lastError;

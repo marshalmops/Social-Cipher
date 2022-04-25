@@ -16,3 +16,8 @@ Error NetworkFacadeInterface::getLastError() const
 {
     return m_lastError;
 }
+
+void NetworkFacadeInterface::abortCurrentRequest()
+{
+    m_requestExecutor->abortCurrentRequest();
+}

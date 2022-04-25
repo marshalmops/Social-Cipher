@@ -40,6 +40,8 @@ void AppExecutionManager::moduleExecEnded()
 {
     // checking condition...
     
+    qInfo() << "moduleExecEnded() called...";
+    
     ++m_quitingCounter;
     
     if (m_quitingCounter != C_QUITING_POINTS_COUNT) return;

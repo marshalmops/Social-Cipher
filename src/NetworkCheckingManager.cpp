@@ -50,6 +50,10 @@ void NetworkCheckingManager::startChecking()
 void NetworkCheckingManager::pauseChecking()
 {
     m_isChecking = false;
+    
+    m_cycledChecker->abortCurrentCheck();
+    
+    qInfo() << "Current check aborting...";
 }
 
 void NetworkCheckingManager::launchCheckingCycle()

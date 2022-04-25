@@ -80,30 +80,38 @@ Error NetworkDialogMessagesFacadeVK::tryGetMessages(std::vector<MessageEntity> &
     
     if (jsonReply.empty()) return Error{};  // timeout
     
-    if (jsonReply.contains("failed") || !(jsonReply.contains(NetworkFacadeVK::C_LONGPOLL_TS_PROP_NAME)
-     && jsonReply.contains("updates")))
-    {
-        return (m_lastError = Error{"Long poll messages getting error!", true});
+    bool isFailedWithTs{false};
+    
+    if (jsonReply.contains("failed")) {
+        if (jsonReply["failed"].toInt(0) != 1) 
+            return (m_lastError = Error{"Long poll request is failed!", true});
+        
+        isFailedWithTs = true;
+        
+    } else {
+        if (!jsonReply.contains("updates"))
+            return (m_lastError = Error{"Long poll messages getting error!", true});
     }
+    
+    if (!jsonReply.contains(NetworkFacadeVK::C_LONGPOLL_TS_PROP_NAME))
+        return (m_lastError = Error{"Long poll messages getting error!", true});
     
     auto rawTsValue = jsonReply[NetworkFacadeVK::C_LONGPOLL_TS_PROP_NAME].toVariant().toULongLong();
     
-    if (rawTsValue == 0 || m_lastTs > rawTsValue) {
+    if (rawTsValue == 0/* || m_lastTs > rawTsValue*/) {
         return (m_lastError = Error{"Long poll messages getting error!", true});
     }
     
     m_lastTs = rawTsValue;
     
-    std::vector<MessageEntity> messagesBuffer;
-    
-    if (!m_entityParser->jsonToMessages(jsonReply["updates"], EntityJsonParserVK::MessageParsingFlag::MPF_IS_EVENT, messagesBuffer))
-        return (m_lastError = Error{"Incoming messages parsing error!", true});
-    
-    // events has reversed order:
-    
-    //std::reverse(messagesBuffer.begin(), messagesBuffer.end());
-    
-    messages = std::move(messagesBuffer);
+    if (!isFailedWithTs) {
+        std::vector<MessageEntity> messagesBuffer;
+        
+        if (!m_entityParser->jsonToMessages(jsonReply["updates"], EntityJsonParserVK::MessageParsingFlag::MPF_IS_EVENT, messagesBuffer))
+            return (m_lastError = Error{"Incoming messages parsing error!", true});
+        
+        messages = std::move(messagesBuffer);
+    }
     
     return Error{};
 }

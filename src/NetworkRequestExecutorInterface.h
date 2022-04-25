@@ -25,6 +25,8 @@ public:
                                     QJsonObject &jsonResponse,
                                     const uint32_t timeout = C_DEFAULT_TIMEOUT) = 0;
     
+    virtual void abortCurrentRequest() = 0;
+    
 //    virtual void prepare() = 0;
     
 protected:

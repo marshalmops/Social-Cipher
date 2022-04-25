@@ -220,9 +220,7 @@ void DialogMessagesModel::resetEncryption()
 
 void DialogMessagesModel::resetModel()
 {
-    if (!m_dialog.get()) return;
-    
-    resetEncryption();
+    if (m_dialog.get()) resetEncryption();
     
     emit modelReset();
 }
