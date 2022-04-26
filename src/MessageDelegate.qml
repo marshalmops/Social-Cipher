@@ -11,7 +11,13 @@ Rectangle {
     property bool   isLocal:                false
     property bool   messageEncryptedStatus: false
     
+    property int messageIndex: -1
+    property bool isChosen: false
+    
     default property int messageRectWidth
+    
+    signal messageChosen       (int index);
+    signal resetMessageChoosing(int index);
     
     Component.onCompleted: {
         if (isLocal) {
@@ -33,6 +39,8 @@ Rectangle {
         
         border.width: 1
         border.color: "darkgrey"
+        
+        color: isChosen ? "lightgrey" : "white"
             
         ColumnLayout {
             id: _messageColumn
@@ -84,6 +92,26 @@ Rectangle {
                 
                 color: (root.messageEncryptedStatus ? "green" : "red")
             }
+        }
+    }
+    
+    MouseArea {
+        anchors.fill: parent
+        
+        onDoubleClicked: {
+            console.log(messageIndex);
+            
+            isChosen = true;
+            
+            messageChosen(messageIndex);
+        }
+        
+        onClicked: {
+            if (!isChosen) return;
+            
+            isChosen = false;
+            
+            resetMessageChoosing(messageIndex);
         }
     }
 }

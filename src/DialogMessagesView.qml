@@ -15,6 +15,15 @@ ViewBase {
         anchors.fill: parent
         spacing: 5
         
+        property int chosenMessageIndex: -1
+        
+//        onChosenMessageIndexChanged: {
+            
+//        }
+        function isChosenMessageIndexValid() {
+            return chosenMessageIndex >= 0;
+        }
+        
         model: dialogMessagesModel
         
         headerPositioning: ListView.OverlayHeader
@@ -33,6 +42,8 @@ ViewBase {
                 anchors.left: parent.left
                 
                 onClicked: {
+                    messagesListView.chosenMessageIndex = -1;
+                    
                     dialogMessagesModel.unsetDialogMessages();
                 }
             }
@@ -63,14 +74,36 @@ ViewBase {
             messageDate:            messageTime
             isLocal:                isLocalMessage
             messageEncryptedStatus: isMessageEncypted
+            messageIndex:           index
+            
+            onMessageChosen: function (index) {
+                if (messagesListView.isChosenMessageIndexValid()) {
+                    var curChosenMessage = messagesListView.itemAtIndex(messagesListView.chosenMessageIndex);
+                    
+                    curChosenMessage.isChosen = false;
+                }
+                
+                messagesListView.chosenMessageIndex = index;
+            }
+            
+            onResetMessageChoosing: function (index) {
+                messagesListView.chosenMessageIndex = -1;
+            }
         }
         
         footerPositioning: ListView.OverlayFooter
         
         footer: Rectangle {
+            id: _listViewFooter
+            
             width: parent.width
-            height: _buttonsColumn.height
+            height: _buttonsColumn.height + (messagesListView.isChosenMessageIndexValid() ? (_toolbar.height + _footerControlsColumn.spacing) : 0)
             z: 3
+            
+            border {
+                width: 1
+                color: "grey"
+            }
             
             function handleMessageSending() {
                 if (_sendingMessage.inputText.length == 0) return;
@@ -79,81 +112,149 @@ ViewBase {
                 _sendingMessage.cleanUp();
             }
             
-            RowLayout {
+            ColumnLayout {
+                id: _footerControlsColumn
+                
                 anchors.fill: parent
                 
-                FlickableTextArea {
-                    id: _sendingMessage
+                RowLayout {
+                    id: _toolbar
                     
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
+                    spacing: 10
                     
-                    placeholderText: qsTr("Enter your message")
+                    visible: messagesListView.isChosenMessageIndexValid()
                     
-                    onReturnPressed: {
-                        handleMessageSending();
+                    Rectangle {
+                        id: _copyButton
+                        
+                        implicitWidth: 30
+                        implicitHeight: implicitWidth
+                        radius: implicitWidth / 2
+                        Layout.topMargin: _footerControlsColumn.spacing
+                        Layout.leftMargin: parent.spacing
+                        Layout.alignment: Qt.AlignVCenter
+                        
+                        border {
+                            width: 1
+                            color: "darkgrey" 
+                        }
+                        
+                        Text {
+                            anchors.fill: parent
+                            
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            
+                            text: qsTr("Copy")
+                        }
+                        
+                        MouseArea {
+                            anchors.fill: parent
+                            
+                            onClicked: {
+                                var message = messagesListView.itemAtIndex(messagesListView.chosenMessageIndex);
+                                
+                                if (message == null) return;
+                                
+                                _copyBuffer.text = message.messageText;
+                                _copyBuffer.selectAll();
+                                _copyBuffer.copy();
+                                
+                                messagesListView.chosenMessageIndex = -1;
+                                _copyBuffer.clear();
+                                
+                                // clearing chosen messages...
+                                
+                                message.isChosen = false;
+                            }
+                        }
                     }
                 }
                 
-                // encryption and sending buttons...
-                
-                Column {
-                    id: _buttonsColumn
+                RowLayout {
+                    //anchors.fill: parent
+                    Layout.fillWidth: true
                     
-                    height: _sendButton.height + _encryptButton.height + spacing
-                    spacing: 5
-                    padding: 5
-                    
-                    SimpleButton {
-                        id: _sendButton
+                    FlickableTextArea {
+                        id: _sendingMessage
                         
-                        text: qsTr("Send")
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
                         
-                        width: 50
+                        placeholderText: qsTr("Enter your message")
                         
-                        onClicked: {
+                        onReturnPressed: {
                             handleMessageSending();
                         }
                     }
                     
-                    SimpleButton {
-                        id: _encryptButton
-                        
-                        text: qsTr("Encrypt")
-                        
-                        width: 70
-                        
-                        onClicked: {
-                            _encryptButton.enabled = false;
-                            
-                            dialogMessagesModel.startEncryption();
-                            
-                            _encryptionRetryTimer.start();
-                        }
-                        
-                        Timer {
-                            id: _encryptionRetryTimer
-                            
-                            interval: 5000
-                            onTriggered: _encryptButton.enabled = true;
-                        }
-                    }
+                    // encryption and sending buttons...
                     
-                    SimpleButton {
-                        id: _resetEncryptionButton
+                    Column {
+                        id: _buttonsColumn
                         
-                        text: qsTr("Reset")
-                        enabled: isEncrypted
+                        height: _sendButton.height + _encryptButton.height + spacing
+                        spacing: 5
+                        padding: 5
                         
-                        width: 70
+                        SimpleButton {
+                            id: _sendButton
+                            
+                            text: qsTr("Send")
+                            
+                            width: 50
+                            
+                            onClicked: {
+                                handleMessageSending();
+                            }
+                        }
                         
-                        onClicked: {
-                            dialogMessagesModel.resetEncryption();
+                        SimpleButton {
+                            id: _encryptButton
+                            
+                            text: qsTr("Encrypt")
+                            
+                            width: 70
+                            
+                            onClicked: {
+                                _encryptButton.enabled = false;
+                                
+                                dialogMessagesModel.startEncryption();
+                                
+                                _encryptionRetryTimer.start();
+                            }
+                            
+                            Timer {
+                                id: _encryptionRetryTimer
+                                
+                                interval: 5000
+                                onTriggered: _encryptButton.enabled = true;
+                            }
+                        }
+                        
+                        SimpleButton {
+                            id: _resetEncryptionButton
+                            
+                            text: qsTr("Reset")
+                            enabled: isEncrypted
+                            
+                            width: 70
+                            
+                            onClicked: {
+                                dialogMessagesModel.resetEncryption();
+                            }
                         }
                     }
                 }
             }
         }
+    }
+    
+    TextEdit {
+        id: _copyBuffer
+        
+        visible: false
     }
     
     Keys.onBackPressed: {
