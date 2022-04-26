@@ -4,7 +4,7 @@ import QtQuick.Layouts 1.12
 Rectangle {
     id: root
     
-    height: 40
+    height: 44
     
     signal dialogClicked(int peerId)
     
@@ -16,35 +16,47 @@ Rectangle {
     border.width: 1
     border.color: "darkgrey"
         
-    RowLayout {
-        id: _headerRow
+    ColumnLayout {
         width: parent.width
         
+        RowLayout {
+            id: _headerRow
+            //width: parent.width
+            Layout.fillWidth: true
+            Layout.topMargin: 4
+            
+            Text {
+                id: _peerName
+                
+                Layout.leftMargin: 5
+                Layout.fillWidth: true
+                
+                text: peerName
+            }
+            
+            Text {
+                id: _lastMessageDate
+                
+                Layout.rightMargin: 5
+                
+                visible: (root.width < _peerName.contentWidth + _lastMessageDate.contentWidth ? false : true)
+                text: lastMessageDate
+            }
+        }
+        
         Text {
-            id: _peerName
+            id: _lastMessageText
             
             Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.leftMargin: 5
+            //anchors.bottom: parent.bottom
+            //width: parent.width
             
-            text: peerName
+            maximumLineCount: 1
+            elide: Text.ElideRight
+            text: lastMessageText
         }
-        
-        Text {
-            id: _lastMessageDate
-            
-            visible: (root.width < _peerName.contentWidth + _lastMessageDate.contentWidth ? false : true)
-            text: lastMessageDate
-        }
-    }
-    
-    Text {
-        id: _lastMessageText
-        
-        anchors.bottom: parent.bottom
-        width: parent.width
-        
-        maximumLineCount: 1
-        elide: Text.ElideRight
-        text: lastMessageText
     }
     
     MouseArea {
