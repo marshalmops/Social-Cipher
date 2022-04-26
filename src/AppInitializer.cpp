@@ -35,8 +35,9 @@ bool AppInitializer::initializeApp(QGuiApplication                         *app,
     
     // signals / slots bindings:
     
-    QObject::connect(appExecManager.get(), &AppExecutionManager::quittingRequested, networkCheckingManager,    &NetworkCheckingManager::stop, Qt::QueuedConnection);
-    QObject::connect(appExecManager.get(), &AppExecutionManager::quittingRequested, dialogMessagesModel.get(), &DialogMessagesModel::resetModel);
+    QObject::connect(appExecManager.get(), &AppExecutionManager::quittingRequested, networkCheckingManager, &NetworkCheckingManager::stop, Qt::QueuedConnection);
+    QObject::connect(appExecManager.get(), &AppExecutionManager::quittingRequested, dialogsModel.get(),     &DialogsModel::resetDialogs);
+    //QObject::connect(appExecManager.get(), &AppExecutionManager::quittingRequested, dialogMessagesModel.get(), &DialogMessagesModel::resetModel);
     
     QObject::connect(loginModel.get(), &LoginModel::errorOccured,         appExecManager.get(),         &AppExecutionManager::processOccuredError);
     QObject::connect(loginModel.get(), &LoginModel::signedIn,             dialogsModel.get(),           &DialogsModel::initializeDialogs);    
@@ -50,13 +51,14 @@ bool AppInitializer::initializeApp(QGuiApplication                         *app,
     QObject::connect(dialogsModel.get(), &DialogsModel::dialogsInitialized,          appExecManager.get(),         &AppExecutionManager::endLoading);  
     QObject::connect(dialogsModel.get(), &DialogsModel::dialogsInitialized,          appExecManager.get(),         &AppExecutionManager::moveToDialogs);  
     QObject::connect(dialogsModel.get(), &DialogsModel::dialogsUnset,                appExecManager.get(),         &AppExecutionManager::moveToLogin);
+    QObject::connect(dialogsModel.get(), &DialogsModel::dialogsReset,                appExecManager.get(),         &AppExecutionManager::moduleExecEnded);
     
     QObject::connect(dialogMessagesModel.get(), &DialogMessagesModel::errorOccured,  appExecManager.get(),    &AppExecutionManager::processOccuredError);
     QObject::connect(dialogMessagesModel.get(), &DialogMessagesModel::messagesSet,   appExecManager.get(),    &AppExecutionManager::moveToDialogMessages);
     QObject::connect(dialogMessagesModel.get(), &DialogMessagesModel::messagesUnset, appExecManager.get(),    &AppExecutionManager::moveToDialogs);
     QObject::connect(dialogMessagesModel.get(), &DialogMessagesModel::messagesUnset, dialogsModel.get(),      &DialogsModel::closeDialog);    
     QObject::connect(dialogMessagesModel.get(), &DialogMessagesModel::messageRowInserted, dialogsModel.get(), &DialogsModel::currentDialogMessageInserted);
-    QObject::connect(dialogMessagesModel.get(), &DialogMessagesModel::modelReset,    appExecManager.get(),    &AppExecutionManager::moduleExecEnded);
+//    QObject::connect(dialogMessagesModel.get(), &DialogMessagesModel::modelReset,    appExecManager.get(),    &AppExecutionManager::moduleExecEnded);
     
     QObject::connect(networkCheckingManager, &NetworkCheckingManager::newMessagesOccured, dialogsModel.get(),   &DialogsModel::newMessagesOccured,         Qt::QueuedConnection);
     QObject::connect(networkCheckingManager, &NetworkCheckingManager::errorOccured,       appExecManager.get(), &AppExecutionManager::processOccuredError, Qt::QueuedConnection);

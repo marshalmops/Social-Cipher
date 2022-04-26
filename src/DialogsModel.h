@@ -26,9 +26,7 @@ public:
         URI_COUNT
     };
     
-    DialogsModel(/*std::unique_ptr<NetworkDialogsFacadeInterface> &&dialogsFacade,
-                 std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogMessagesFacade,*/
-                 QObject *parent = nullptr);
+    DialogsModel(QObject *parent = nullptr);
     
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -42,6 +40,8 @@ signals:
     
     void dialogsInitialized();
     void dialogsUnset      ();
+    
+    void dialogsReset();
     
 public slots:
     void setDialogsModelFacades(NetworkDialogsFacadeInterface *dialogsFacade,
@@ -58,9 +58,12 @@ public slots:
     void dialogPreviewChanged        (const DialogEntity::EntityId id);
     void currentDialogMessageInserted();
     
+    void resetDialogs();
+    
 private:
     void resetCurrentDialog();
     void resetModelContent ();
+    void resetDialogsEncryption();
     
     void insertDialogRow(const DialogEntity &dialog);
     

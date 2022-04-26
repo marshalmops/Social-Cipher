@@ -1,40 +1,6 @@
 #include "DialogMessagesModel.h"
 #include "DialogMessagesModel.h"
 
-
-
-const QHash<DialogMessagesModel::CommandCode, QString> &DialogMessagesModel::getCommandsHash()
-{
-    static QHash<CommandCode, QString> commandsHash = {
-        {CommandCode::CC_START_ENCRYPTION_INIT, "SENI"},
-        {CommandCode::CC_END_ENCRYPTION_INIT,   "EENI"},
-        {CommandCode::CC_RESET_ENCRYPTION,      "REEN"}
-    };
-    
-    return commandsHash;
-}
-
-const DialogMessagesModel::CommandCode DialogMessagesModel::getCommandCodeByString(const QString &command)
-{
-    const auto &commandsHash = getCommandsHash();
-    
-    foreach (const auto &curCommand, commandsHash.keys()) {
-        if (command == commandsHash.value(curCommand))
-            return curCommand;
-    }
-    
-    return CommandCode::CC_INVALID;
-}
-
-const QString DialogMessagesModel::getStringByCommandCode(const CommandCode code)
-{
-    const auto &commandsHash = getCommandsHash();
-    
-    if (!commandsHash.contains(code)) return QString();
-    
-    return commandsHash.value(code);
-}
-
 DialogMessagesModel::DialogMessagesModel(std::unique_ptr<EncoderInterface> &&encoder,
                                          QObject *parent)
     : QAbstractListModel     {parent},
@@ -155,20 +121,30 @@ void DialogMessagesModel::appendMessage(const MessageEntity message)
 {
     if (!message.isValid()) return;
     
-    QString messageText = message.getText();
-    CommandCode command = scanStringForCommand(messageText);
+//    QString messageText = message.getText();
     
-    if (command != CommandCode::CC_INVALID && m_dialog->isInitChecked()) {
-        processCommand(command, messageText.mid(strlen(C_COMMAND_START) + C_COMMAND_LENGTH));
+    NetworkDialogMessagesFacadeInterface::CommandCode command;
+    QString content;
+    
+    if (!m_dialogsMessagesFacade->getCommandByMessage(message, command, content)) {
+        return;
+    }
+    
+//    CommandCode command = scanStringForCommand(messageText);
+    
+    if (command != NetworkDialogMessagesFacadeInterface::CommandCode::CC_INVALID && m_dialog->isInitChecked()) {
+        //processCommand(command, messageText.mid(strlen(C_COMMAND_START) + C_COMMAND_LENGTH));
+        processCommand(command, content);
         
         return;
-        
-    } else {
-        if (m_dialog->isEncrypted()) {
-            messageText = m_encoder->decodeString(prepareEncodedString(messageText), m_dialog->getLocalPrivateKey());
-        
-            if (messageText.isEmpty()) emit errorOccured(Error{"Message decoding fail!"});
-        }
+    }
+    
+    QString messageText = message.getText();
+    
+    if (m_dialog->isEncrypted()) {
+        messageText = m_encoder->decodeString(prepareEncodedString(messageText), m_dialog->getLocalPrivateKey());
+    
+        if (messageText.isEmpty()) emit errorOccured(Error{"Message decoding fail!"});
     }
     
     insertMessageRow(MessageEntity{messageText, m_dialog->isEncrypted(), message.getFromId(), message.getPeerId(), message.getMessageId(), message.getTime()});
@@ -193,10 +169,9 @@ void DialogMessagesModel::startEncryption()
         return;
     }
     
-    MessageEntity response = generateCommandMessage(CommandCode::CC_START_ENCRYPTION_INIT,
-                                                    prepareDecodedBytes(publicKey.getBytes()));
-    
-    auto err = m_dialogsMessagesFacade->sendMessage(response, m_dialog->getPeerId());
+    auto err = m_dialogsMessagesFacade->sendCommand(NetworkDialogMessagesFacadeInterface::CommandCode::CC_START_ENCRYPTION_INIT,
+                                                    prepareDecodedBytes(publicKey.getBytes()),
+                                                    m_dialog->getPeerId());
     
     if (err.isValid()) emit errorOccured(err);
 }
@@ -207,22 +182,15 @@ void DialogMessagesModel::resetEncryption()
     
     m_dialog->resetKeys();
     
-    MessageEntity resetMessage = generateCommandMessage(CommandCode::CC_RESET_ENCRYPTION);
-    
     if (m_dialogsMessagesFacade->getLastError().isValid()) return;
     
-    auto err = m_dialogsMessagesFacade->sendMessage(resetMessage, m_dialog->getPeerId());
+    auto err = m_dialogsMessagesFacade->sendCommand(NetworkDialogMessagesFacadeInterface::CommandCode::CC_RESET_ENCRYPTION,
+                                                    QString(),
+                                                    m_dialog->getPeerId());
     
     if (err.isValid()) emit errorOccured(err);
     
     emit encryptionReset();
-}
-
-void DialogMessagesModel::resetModel()
-{
-    if (m_dialog.get()) resetEncryption();
-    
-    emit modelReset();
 }
 
 void DialogMessagesModel::setDialogMessagesModelFacades(std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogsMessagesFacade)
@@ -252,28 +220,11 @@ void DialogMessagesModel::insertMessageRow(const MessageEntity &message)
     emit messageRowInserted();
 }
 
-DialogMessagesModel::CommandCode DialogMessagesModel::scanStringForCommand(const QString str) const
-{
-    auto fullCommandLength = C_COMMAND_LENGTH + strlen(C_COMMAND_START);
-    
-    if (str.length() < fullCommandLength)
-        return CommandCode::CC_INVALID;
-    
-    QString strBegin{str.mid(0, fullCommandLength)};
-    
-    if (strBegin.mid(0, strlen(C_COMMAND_START)) != QString(C_COMMAND_START))
-        return CommandCode::CC_INVALID;
-    
-    QString commandStr = strBegin.mid(strlen(C_COMMAND_START));
-    
-    return getCommandCodeByString(commandStr);
-}
-
-void DialogMessagesModel::processCommand(const CommandCode command,
+void DialogMessagesModel::processCommand(const NetworkDialogMessagesFacadeInterface::CommandCode command,
                                          const QString &content)
 {
     switch (command) {
-        case CommandCode::CC_START_ENCRYPTION_INIT: {
+        case NetworkDialogMessagesFacadeInterface::CommandCode::CC_START_ENCRYPTION_INIT: {
             m_dialog->resetKeys();
         
             CipherKey publicKey,
@@ -295,10 +246,9 @@ void DialogMessagesModel::processCommand(const CommandCode command,
                 return;
             }
             
-            MessageEntity response = generateCommandMessage(CommandCode::CC_END_ENCRYPTION_INIT,
-                                                            prepareDecodedBytes(publicKey.getBytes()));
-            
-            auto err = m_dialogsMessagesFacade->sendMessage(response, m_dialog->getPeerId());
+            auto err = m_dialogsMessagesFacade->sendCommand(NetworkDialogMessagesFacadeInterface::CommandCode::CC_END_ENCRYPTION_INIT,
+                                                            prepareDecodedBytes(publicKey.getBytes()),
+                                                            m_dialog->getPeerId());
             
             if (err.isValid()) emit errorOccured(err);
             
@@ -306,7 +256,7 @@ void DialogMessagesModel::processCommand(const CommandCode command,
             
             break;
         }
-        case CommandCode::CC_END_ENCRYPTION_INIT: {
+        case NetworkDialogMessagesFacadeInterface::CommandCode::CC_END_ENCRYPTION_INIT: {
             auto remotePublicKey {prepareEncodedString(content)};
 
             if (!m_dialog->setRemoteKey(CipherKey(remotePublicKey)))
@@ -320,7 +270,7 @@ void DialogMessagesModel::processCommand(const CommandCode command,
             
             break;
         }
-        case CommandCode::CC_RESET_ENCRYPTION: {
+        case NetworkDialogMessagesFacadeInterface::CommandCode::CC_RESET_ENCRYPTION: {
             if (!m_dialog->isEncrypted()) return;
         
             m_dialog->resetKeys();
@@ -330,16 +280,6 @@ void DialogMessagesModel::processCommand(const CommandCode command,
             break;
         }
     }
-}
-
-MessageEntity DialogMessagesModel::generateCommandMessage(const CommandCode command,
-                                                          const QString     &content) const
-{
-    QString messageText = QString(C_COMMAND_START) + getStringByCommandCode(command) + content;
-    
-    MessageEntity message{messageText};
-    
-    return message;
 }
 
 QByteArray DialogMessagesModel::prepareEncodedString(const QString str) const

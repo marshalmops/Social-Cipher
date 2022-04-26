@@ -16,21 +16,6 @@ class DialogMessagesModel : public QAbstractListModel
     Q_PROPERTY(QString peerName READ getPeerName NOTIFY messagesSet)
     
 public:
-    constexpr static const char*   C_COMMAND_START  = "__";
-    constexpr static const uint8_t C_COMMAND_LENGTH = 4;
-    
-    enum CommandCode : uint8_t {
-        CC_INVALID = 0,
-        CC_START_ENCRYPTION_INIT,
-        CC_END_ENCRYPTION_INIT,
-        CC_RESET_ENCRYPTION
-    };
-    
-    static const QHash<CommandCode, QString>& getCommandsHash();
-    
-    static const CommandCode getCommandCodeByString(const QString &command);
-    static const QString     getStringByCommandCode(const CommandCode code);
-    
     constexpr static const char* C_MESSAGE_ORIGIN            = "isLocalMessage";
     constexpr static const char* C_MESSAGE_CONTENT           = "messageContent";
     constexpr static const char* C_MESSAGE_TIME              = "messageTime";
@@ -44,8 +29,7 @@ public:
         URI_COUNT
     };
     
-    explicit DialogMessagesModel(/*std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogMessagesFacade,*/
-                                 std::unique_ptr<EncoderInterface> &&encoder,
+    explicit DialogMessagesModel(std::unique_ptr<EncoderInterface> &&encoder,
                                  QObject *parent = nullptr);
     
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -64,8 +48,6 @@ signals:
     void encryptionStarted();
     void encryptionReset();
     
-    void modelReset();
-    
 public slots:
     void setDialogMessagesModelFacades(std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogsMessagesFacade);
     
@@ -78,19 +60,14 @@ public slots:
     void startEncryption(); // qml
     void resetEncryption(); // qml
     
-    void resetModel();
-    
 private:
     void resetModelContent();
     
     void insertMessageRow(const MessageEntity &message);
     
-    CommandCode scanStringForCommand(const QString str) const;
-    void processCommand(const CommandCode command,
+    void processCommand(const NetworkDialogMessagesFacadeInterface::CommandCode command,
                         const QString     &content);
-    MessageEntity generateCommandMessage(const CommandCode command,
-                                         const QString     &content = QString()) const;
-    
+
     QByteArray prepareEncodedString(const QString str)      const;
     QString    prepareDecodedBytes (const QByteArray bytes) const;
     

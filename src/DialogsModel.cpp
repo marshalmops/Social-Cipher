@@ -24,13 +24,6 @@ QVariant DialogsModel::data(const QModelIndex &index, int role) const
     if (role <= Qt::UserRole || role >= UserRolesIds::URI_COUNT) 
         return data;
     
-//    DialogEntity::EntityId curDialogId;
-    
-//    if (!getIdOfDialogByIndex(index.row(), curDialogId))//*(m_dialogs.begin()->get() + index.row());
-//        return data;
-//    if (!m_dialogs.contains(curDialogId))
-//        return data;
-    
     auto &curDialog      = m_dialogs[index.row()];//curDialogId];qInfo() << curDialogId;
     auto &curLastMessage = curDialog->getLastMessage();
     
@@ -189,6 +182,8 @@ void DialogsModel::initializeDialogs()
 
 void DialogsModel::unsetDialogs()
 {
+    resetDialogsEncryption();
+    
     resetModelContent();
     
     emit dialogsUnset();
@@ -212,27 +207,41 @@ void DialogsModel::currentDialogMessageInserted()
     dialogPreviewChanged(m_curDialogId);
 }
 
+void DialogsModel::resetDialogs()
+{
+    resetDialogsEncryption();
+    
+    emit dialogsReset();
+}
+
 void DialogsModel::setDialogsModelFacades(NetworkDialogsFacadeInterface *dialogsFacade,
                                           std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogMessagesFacade)
 {
     m_dialogsFacade        = std::unique_ptr<NetworkDialogsFacadeInterface>(dialogsFacade);
     m_dialogMessagesFacade = dialogMessagesFacade;
-    
-//    if (!m_dialogsFacade->initialize()
-//     || !m_dialogMessagesFacade->initialize())
-//    {
-//        emit errorOccured(Error{"Dialogs model facades init error!", true});
-//    }
+
 }
 
 void DialogsModel::resetModelContent()
 {
     beginRemoveRows(QModelIndex(), 0, rowCount());
     
-    //resetCurrentDialog();
     m_dialogs.clear();
     
     endRemoveRows();
+}
+
+void DialogsModel::resetDialogsEncryption()
+{
+    foreach (const auto &dialog, m_dialogs) {
+        if (!dialog->isEncrypted()) continue;
+        
+        auto err = m_dialogMessagesFacade->sendCommand(NetworkDialogMessagesFacadeInterface::CommandCode::CC_RESET_ENCRYPTION,
+                                                       QString(),
+                                                       dialog->getPeerId());
+        
+        if (err.isValid()) emit errorOccured(err);
+    }
 }
 
 void DialogsModel::insertDialogRow(const DialogEntity &dialog)
@@ -241,7 +250,6 @@ void DialogsModel::insertDialogRow(const DialogEntity &dialog)
     
     emit beginInsertRows(QModelIndex(), curDialogsCount, curDialogsCount);
     
-    //m_dialogs[dialog.getPeerId()] = std::make_shared<DialogEntity>(std::move(dialog));
     m_dialogs.push_back(std::make_shared<DialogEntity>(std::move(dialog)));
     
     emit endInsertRows();
