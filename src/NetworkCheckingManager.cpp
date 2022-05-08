@@ -66,7 +66,7 @@ void NetworkCheckingManager::launchCheckingCycle()
         eventDispatcher->processEvents(QEventLoop::AllEvents);
         
         if (m_isChecking) {
-            std::vector<MessageEntity> newMessages;
+            std::vector<std::shared_ptr<MessageEntityBase>> newMessages;
         
             auto err = m_cycledChecker->check(newMessages);
             

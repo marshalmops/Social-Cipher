@@ -1,13 +1,13 @@
 #include "NetworkDialogsFacadeVK.h"
 
-NetworkDialogsFacadeVK::NetworkDialogsFacadeVK(const std::shared_ptr<EntityJsonParserVK> &parser,
+NetworkDialogsFacadeVK::NetworkDialogsFacadeVK(const std::shared_ptr<DialogJsonParserVK> &dialogsParser, 
                                                const std::shared_ptr<NetworkRequestExecutorInterface> &executor)
-    : NetworkDialogsFacadeInterface{parser, executor}
+    : NetworkDialogsFacadeInterface{dialogsParser, executor}
 {
     
 }
 
-Error NetworkDialogsFacadeVK::getDialogs(std::vector<DialogEntity> &dialogs)
+Error NetworkDialogsFacadeVK::getDialogs(std::vector<std::unique_ptr<DialogEntityBase>> &dialogs)
 {
     auto networkSettings = NetworkSettings::getInstance();
     QString requestString{};
@@ -34,9 +34,9 @@ Error NetworkDialogsFacadeVK::getDialogs(std::vector<DialogEntity> &dialogs)
     if (!jsonReply.contains("items") || !jsonReply.contains("profiles") || !jsonReply.contains("groups"))
         return (m_lastError = err);
     
-    std::vector<DialogEntity> dialogsBuffer;
+    std::vector<std::unique_ptr<DialogEntityBase>> dialogsBuffer;
     
-    if (!m_entityParser->jsonToDialogs(jsonReply, dialogsBuffer))
+    if (!m_dialogsParser->jsonToDialogs(jsonReply, dialogsBuffer))
         return (m_lastError = err);
     
     dialogs = std::move(dialogsBuffer);

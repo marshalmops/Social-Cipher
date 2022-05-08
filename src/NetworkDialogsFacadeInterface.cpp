@@ -1,9 +1,9 @@
 #include "NetworkDialogsFacadeInterface.h"
 
-NetworkDialogsFacadeInterface::NetworkDialogsFacadeInterface(const std::shared_ptr<EntityJsonParserInterface> &entityParser,
+NetworkDialogsFacadeInterface::NetworkDialogsFacadeInterface(const std::shared_ptr<DialogJsonParserInterface> &dialogsParser,
                                                              const std::shared_ptr<NetworkRequestExecutorInterface> &executor)
-    : NetworkFacadeInterface        {executor},
-      NetworkFacadeUsingEntityParser{entityParser}
+    : NetworkFacadeInterface{executor},
+      m_dialogsParser       {dialogsParser}
 {
     
 }

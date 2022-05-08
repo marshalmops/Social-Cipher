@@ -29,7 +29,7 @@ void LoginModel::changeSocialNetwork(const NetworkSettings::SocialNetwork social
     emit socialNetworkChanged(socialNetwork);
 }
 
-void LoginModel::setLoginModelFacades(NetworkLoginFacadeInterface *loginFacade)
+void LoginModel::setLoginModelNetworkInterface(NetworkLoginFacadeInterface *loginFacade)
 {
     m_loginFacade = std::unique_ptr<NetworkLoginFacadeInterface>(loginFacade);
     

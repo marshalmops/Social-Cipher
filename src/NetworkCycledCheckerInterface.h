@@ -11,11 +11,9 @@ class NetworkCycledCheckerInterface
 public:
     explicit NetworkCycledCheckerInterface(std::unique_ptr<NetworkDialogMessagesFacadeInterface> &&dialogMessagesFacade);
     
-    virtual Error check(std::vector<MessageEntity> &newMessages) = 0;
+    virtual Error check(std::vector<std::shared_ptr<MessageEntityBase>> &newMessages) = 0;
     
     void abortCurrentCheck();
-    
-//    virtual void prepare() = 0;
     
 protected:
     std::unique_ptr<NetworkDialogMessagesFacadeInterface> m_dialogMessagesFacade;

@@ -1,14 +1,14 @@
 #include "NetworkDialogMessagesFacadeVK.h"
 
-NetworkDialogMessagesFacadeVK::NetworkDialogMessagesFacadeVK(const std::shared_ptr<EntityJsonParserVK> &parser,
+NetworkDialogMessagesFacadeVK::NetworkDialogMessagesFacadeVK(std::unique_ptr<IncomingMessagesProcessorBase> &messagesProcessor,
                                                              const std::shared_ptr<NetworkRequestExecutorInterface> &executor)
-    : NetworkDialogMessagesFacadeInterface{parser, executor},
+    : NetworkDialogMessagesFacadeInterface{messagesProcessor, executor},
       m_lastTs{0}
 {
     
 }
 
-Error NetworkDialogMessagesFacadeVK::sendMessage(const MessageEntity &message,
+Error NetworkDialogMessagesFacadeVK::sendMessage(const std::shared_ptr<MessageEntityBase> &message,
                                                  const EntityInterface::EntityId peerId) const
 {
     auto networkSettings = NetworkSettings::getInstance();
@@ -24,7 +24,20 @@ Error NetworkDialogMessagesFacadeVK::sendMessage(const MessageEntity &message,
     QUrlQuery payload;
     
     payload.addQueryItem("peer_id", QString::number(peerId));
-    payload.addQueryItem("message", QString::fromUtf8(QUrl::toPercentEncoding(message.getText())));
+    payload.addQueryItem("message", QString::fromUtf8(QUrl::toPercentEncoding(message->getText())));
+    
+    QString attachmentsString{};
+    
+    for (auto i = 0; i < message->getAttachments().size(); ++i) {
+        AttachmentEntityVKUsingIdString *attachment{dynamic_cast<AttachmentEntityVKUsingIdString*>(message->getAttachments().at(i).get())};
+        QString attachmentTypeIdString{attachment->getType() + attachment->getIdString()};
+        
+        attachmentsString += (attachmentTypeIdString + (i + 1 == message->getAttachments().size() ? ' ' : ','));
+    }
+    
+    if (!attachmentsString.isEmpty())
+        payload.addQueryItem("attachment", attachmentsString);
+    
     payload.addQueryItem("random_id", 0);
     payload.addQueryItem("access_token", QString::fromUtf8(networkSettings->getToken()));
     payload.addQueryItem("v", networkSettings->getAdditionalPropValue(NetworkFacadeVK::C_API_VERSION));
@@ -48,7 +61,58 @@ Error NetworkDialogMessagesFacadeVK::sendMessage(const MessageEntity &message,
     return Error{};
 }
 
-Error NetworkDialogMessagesFacadeVK::tryGetMessages(std::vector<MessageEntity> &messages)
+std::shared_ptr<MessageEntityBase> NetworkDialogMessagesFacadeVK::generateCommandMessage(const CommandCode command, 
+                                                                                         const QString &content) const
+{
+    QString messageText = QString(C_COMMAND_START) + getStringByCommandCode(command) + content;
+    std::shared_ptr<MessageEntityBase> message{std::make_shared<MessageEntityBase>(messageText)};
+    
+    return message;
+}
+
+Error NetworkDialogMessagesFacadeVK::getMessageById(const EntityInterface::EntityId peerId,
+                                                    const EntityInterface::EntityId messageId,
+                                                    std::shared_ptr<MessageEntityBase> &gottenMessage)
+{
+    Error err{"Message getting error!", true};
+    
+    auto networkSettings = NetworkSettings::getInstance();
+    QString requestString{};
+    
+    requestString += NetworkSettings::getUrlBySocialNetwork(networkSettings->getSocialNetwork()) + QString("/messages.getHistory?");
+    requestString += QString("peer_id=") + QString::number(peerId) + '&';
+    requestString += QString("start_message_id=") + QString::number(messageId) + '&';
+    requestString += QString("count=") + QString::number(1) + '&';
+    requestString += QString("access_token=") + networkSettings->getToken() + '&';
+    requestString += QString("v=") + networkSettings->getAdditionalPropValue(NetworkFacadeVK::C_API_VERSION);
+    
+    QJsonObject jsonReply;
+    
+    if (!m_requestExecutor->executeGetRequest(QUrl(requestString, QUrl::TolerantMode), jsonReply))
+        return (m_lastError = err);
+    
+    if (jsonReply.contains("error"))
+        return (m_lastError = err);
+    
+    if (!jsonReply.contains("response"))   return err;
+    if (!jsonReply["response"].isObject()) return err;
+    
+    jsonReply = jsonReply["response"].toObject();
+    
+    if (!jsonReply.contains("items")) return err;
+    
+    std::vector<std::shared_ptr<MessageEntityBase>> messagesBuffer;
+    
+    if (!m_messagesProcessor->processMessages(jsonReply["items"], 0, messagesBuffer))
+        return (m_lastError = err);
+    if (messagesBuffer.size() != 1) return (m_lastError = err);
+    
+    gottenMessage = std::move(messagesBuffer.front());
+    
+    return Error{};
+}
+
+Error NetworkDialogMessagesFacadeVK::tryGetMessages(std::vector<std::shared_ptr<MessageEntityBase>> &messages)
 {
     // long poll request:
     
@@ -105,10 +169,38 @@ Error NetworkDialogMessagesFacadeVK::tryGetMessages(std::vector<MessageEntity> &
     m_lastTs = rawTsValue;
     
     if (!isFailedWithTs) {
-        std::vector<MessageEntity> messagesBuffer;
+        std::vector<std::shared_ptr<MessageEntityBase>> messagesBuffer;
         
-        if (!m_entityParser->jsonToMessages(jsonReply["updates"], EntityJsonParserVK::MessageParsingFlag::MPF_IS_EVENT, messagesBuffer))
-            return (m_lastError = Error{"Incoming messages parsing error!", true});
+        if (!m_messagesProcessor->processMessages(jsonReply["updates"], RelatedToMessagesProcessingVK::MessageProcessingFlag::MPF_IS_EVENT, messagesBuffer))
+            return (m_lastError = Error{"Incoming messages processing error!", true});
+        
+        // converting attachments using id string to link-related ones:
+        
+        for (auto iter = messagesBuffer.begin(); iter != messagesBuffer.end(); ++iter) {
+            auto &curMessage {*iter};
+            auto &curAttachments{curMessage->getAttachments()};
+            
+            if (curAttachments.size() <= 0) continue;
+            
+            // getting message using standard way (with attachments using URLs)...
+            
+            std::shared_ptr<MessageEntityBase> gottenMessage;
+            
+            Error gettingMessageError{};
+            
+            if ((gettingMessageError = getMessageById(curMessage->getPeerId(), curMessage->getMessageId(), gottenMessage)).isValid())
+                return (m_lastError = gettingMessageError);
+            
+            curMessage.swap(gottenMessage);
+        }
+        
+//        if (!m_messagesParser->jsonToMessages(jsonReply["updates"], MessageJsonParserVK::MessageParsingFlag::MPF_IS_EVENT, messagesBuffer))
+//            return (m_lastError = Error{"Incoming messages parsing error!", true});
+        
+//        std::vector<std::unique_ptr<MessageEntityBase>> filteredMessagesBuffer;
+        
+//        if (!m_messagesFilter->filterMessagesByAttachments(messagesBuffer, filteredMessagesBuffer))
+//            return (m_lastError = Error{"Incoming messages filtering error!", true});
         
         messages = std::move(messagesBuffer);
     }
@@ -117,7 +209,8 @@ Error NetworkDialogMessagesFacadeVK::tryGetMessages(std::vector<MessageEntity> &
 }
 
 Error NetworkDialogMessagesFacadeVK::getDialogMessages(const EntityInterface::EntityId peerId,
-                                                       std::vector<MessageEntity> &messages)
+                                                       std::vector<std::shared_ptr<MessageEntityBase>> &messages,
+                                                       const uint8_t messagesCount)
 {
     // traditional request
     
@@ -126,6 +219,7 @@ Error NetworkDialogMessagesFacadeVK::getDialogMessages(const EntityInterface::En
     
     requestString += NetworkSettings::getUrlBySocialNetwork(networkSettings->getSocialNetwork()) + QString("/messages.getHistory?");
     requestString += QString("peer_id=") + QString::number(peerId) + '&';
+    requestString += QString("count=") + QString::number(messagesCount) + '&';
     requestString += QString("access_token=") + networkSettings->getToken() + '&';
     requestString += QString("v=") + networkSettings->getAdditionalPropValue(NetworkFacadeVK::C_API_VERSION);
     
@@ -145,10 +239,18 @@ Error NetworkDialogMessagesFacadeVK::getDialogMessages(const EntityInterface::En
     
     if (!jsonReply.contains("items")) return err;
     
-    std::vector<MessageEntity> messagesBuffer;
+    std::vector<std::shared_ptr<MessageEntityBase>> messagesBuffer;
     
-    if (!m_entityParser->jsonToMessages(jsonReply["items"], 0, messagesBuffer))
+    if (!m_messagesProcessor->processMessages(jsonReply["items"], 0, messagesBuffer))
         return (m_lastError = err);
+    
+//    if (!m_messagesParser->jsonToMessages(jsonReply["items"], 0, messagesBuffer))
+//        return (m_lastError = err);
+    
+//    std::vector<std::unique_ptr<MessageEntityBase>> filteredMessagesBuffer;
+    
+//    if (!m_messagesFilter->filterMessagesByAttachments(messagesBuffer, filteredMessagesBuffer))
+//        return (m_lastError = Error{"Incoming messages filtering error!", true});
     
     std::reverse(messagesBuffer.begin(), messagesBuffer.end());
     

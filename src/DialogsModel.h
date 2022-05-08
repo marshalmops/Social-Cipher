@@ -5,9 +5,11 @@
 #include <QThread>
 
 #include "Error.h"
+
 #include "NetworkDialogsFacadeInterface.h"
 #include "NetworkDialogMessagesFacadeInterface.h"
-#include "DialogEntity.h"
+
+#include "DialogEntityBase.h"
 
 class DialogsModel : public QAbstractListModel
 {
@@ -35,8 +37,8 @@ public:
 signals:
     void errorOccured(const Error error);
     
-    void dialogSet                  (std::shared_ptr<DialogEntity> dialog);
-    void activeDialogMessageReceived(const MessageEntity message);
+    void dialogSet                  (std::shared_ptr<DialogEntityBase> dialog);
+    void activeDialogMessageReceived(std::shared_ptr<MessageEntityBase> message);
     
     void dialogsInitialized();
     void dialogsUnset      ();
@@ -44,18 +46,18 @@ signals:
     void dialogsReset();
     
 public slots:
-    void setDialogsModelFacades(NetworkDialogsFacadeInterface *dialogsFacade,
-                                std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogMessagesFacade);
+    void setDialogsModelNetworkInterface(NetworkDialogsFacadeInterface *dialogsFacade,
+                                         std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogMessagesFacade);
     
     void openDialog (const quint64 dialogIndex);     // qml
     void closeDialog();
     
-    void newMessagesOccured(const std::vector<MessageEntity> messages);
+    void newMessagesOccured(std::vector<std::shared_ptr<MessageEntityBase>> messages);
     
     void initializeDialogs();
     void unsetDialogs     ();   // qml signal handler.
     
-    void dialogPreviewChanged        (const DialogEntity::EntityId id);
+    void dialogPreviewChanged        (const DialogEntityBase::EntityId id);
     void currentDialogMessageInserted();
     
     void resetDialogs();
@@ -65,18 +67,18 @@ private:
     void resetModelContent ();
     void resetDialogsEncryption();
     
-    void insertDialogRow(const DialogEntity &dialog);
+    void insertDialogRow(std::unique_ptr<DialogEntityBase> &dialog);
     
-    bool getIndexOfDialogById(const DialogEntity::EntityId dialogId, 
+    bool getIndexOfDialogById(const DialogEntityBase::EntityId dialogId, 
                               uint32_t &index) const;
     bool getIdOfDialogByIndex(const uint32_t index,
                               EntityInterface::EntityId &dialogId) const;
-    bool getDialogById(const DialogEntity::EntityId dialogId,
-                       std::shared_ptr<DialogEntity> &dialog) const;
+    bool getDialogById(const DialogEntityBase::EntityId dialogId,
+                       std::shared_ptr<DialogEntityBase> &dialog) const;
     
-    DialogEntity::EntityId m_curDialogId;
+    DialogEntityBase::EntityId m_curDialogId;
     
-    /*QHash<DialogEntity::EntityId, */std::vector<std::shared_ptr<DialogEntity>> m_dialogs;
+    /*QHash<DialogEntity::EntityId, */std::vector<std::shared_ptr<DialogEntityBase>> m_dialogs;
     
     std::unique_ptr<NetworkDialogsFacadeInterface>        m_dialogsFacade;
     std::shared_ptr<NetworkDialogMessagesFacadeInterface> m_dialogMessagesFacade;

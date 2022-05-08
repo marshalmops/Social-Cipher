@@ -18,6 +18,10 @@ public:
     constexpr static const char* C_AUTH_TOKEN_PROP_NAME     = "authToken";
     constexpr static const char* C_LOCAL_PEER_ID_PROP_NAME  = "localPeerId";
     
+    constexpr static const char*           C_ENCODED_ATTACHMENT_EXTENSION = "enc";
+    constexpr static const QMetaType::Type C_ENCODED_ATTACHMENT_METATYPE  = QMetaType::Type::QByteArray;
+    constexpr static const QMetaType::Type C_DOCUMENT_ATTACHMENT_METATYPE = static_cast<QMetaType::Type>(QMetaType::Type::User + 1);
+    
     using SocialNetworkType = uint8_t;
     using AuthToken         = QByteArray;
     using PeerId            = int64_t;

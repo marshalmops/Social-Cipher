@@ -25,8 +25,8 @@ public slots:
     void pauseChecking();
     
 signals:
-    void errorOccured      (const Error error);
-    void newMessagesOccured(const std::vector<MessageEntity> messages);
+    void errorOccured      (Error error);
+    void newMessagesOccured(std::vector<std::shared_ptr<MessageEntityBase>> messages);
     
     void execEnded();
     

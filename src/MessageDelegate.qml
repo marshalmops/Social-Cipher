@@ -10,6 +10,7 @@ Rectangle {
     property string messageDate:            ""
     property bool   isLocal:                false
     property bool   messageEncryptedStatus: false
+    property var    messageAttachmentsToShow: []
     
     property int messageIndex: -1
     property bool isChosen: false
@@ -34,7 +35,9 @@ Rectangle {
     Rectangle {
         id: _messageWrapper
         
-        height: _messageEncryptionStatus.height + _messageText.contentHeight + _messageDate.contentHeight + _messageColumn.spacing * 2 + _messageText.topPadding * 2 //+ _messageColumn.padding * 3
+        property int defaultSpacing: 5
+        
+        height: _messageEncryptionStatus.height + _messageText.contentHeight + _messageDate.contentHeight + _attachmentsListView.height + _messageWrapper.defaultSpacing * 5
         width: messageRectWidth
         
         border.width: 1
@@ -42,76 +45,104 @@ Rectangle {
         
         color: isChosen ? "lightgrey" : "white"
             
-        ColumnLayout {
-            id: _messageColumn
+        MouseArea {
+            anchors.fill: parent
             
-            width: parent.width
-            spacing: 5
-//            padding: 5
-            
-            Text {
-                id: _messageText
+            onDoubleClicked: {
+                console.log(messageIndex);
                 
-                Layout.fillWidth: true
-                //width: messageRectWidth
-                topPadding: _messageColumn.spacing
-                rightPadding: 10
-                leftPadding: 10
+                isChosen = true;
                 
-                wrapMode: Text.Wrap
-                text: messageText
+                messageChosen(messageIndex);
             }
             
-            Text {
-                id: _messageDate
+            onClicked: {
+                if (!isChosen) return;
                 
-                //width: parent.width - _messageColumn.padding * 2
-                //horizontalAlignment: (isLocal ? Text.AlignLeft : Text.AlignRight)
-                Layout.alignment: (isLocal ? Qt.AlignLeft : Qt.AlignRight)
-                rightPadding: 10
-                leftPadding: 10
+                isChosen = false;
                 
-                text: messageDate
+                resetMessageChoosing(messageIndex);
             }
+        }
             
-            Rectangle {
-                id: _messageEncryptionStatus
+        Text {
+            id: _messageText
+            
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.left: parent.left
+            topPadding: _messageWrapper.defaultSpacing
+            rightPadding: 10
+            leftPadding: 10
+            
+            wrapMode: Text.Wrap
+            text: messageText
+        }
+        
+        ListView {
+            // attachments list:
+            
+            id: _attachmentsListView
+            
+            anchors.top: _messageText.bottom
+            anchors.topMargin: _messageWrapper.defaultSpacing
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: 10
+            anchors.rightMargin: 10
+            height: (root.messageAttachmentsToShow.length * width)
+            
+            model: messageAttachmentsToShow
+            clip: true
+            
+            delegate: AttachmentToShowDelegate {
+                width: _attachmentsListView.width
                 
-                width: 10
-                height: width
-                radius: width / 2
-                
-                Layout.alignment: (isLocal ? Qt.AlignLeft : Qt.AlignRight)
-                Layout.rightMargin: (isLocal ? 0  : 10)
-                Layout.leftMargin:  (isLocal ? 10 : 0)
-                
-                border {
-                    width: 1
-                    color: "#626262"
+                attachmentLocalFileLink: modelData
+            }
+        }
+        
+        Text {
+            id: _messageDate
+            
+            anchors.top: _attachmentsListView.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            horizontalAlignment: (isLocal ? Text.AlignLeft : Text.AlignRight)
+            topPadding: _messageWrapper.defaultSpacing
+            rightPadding: 10
+            leftPadding: 10
+            
+            text: messageDate
+        }
+        
+        Rectangle {
+            id: _messageEncryptionStatus
+            
+            width: 10
+            height: width
+            radius: width / 2
+            
+            anchors.top: _messageDate.bottom
+            anchors.topMargin: _messageWrapper.defaultSpacing
+            anchors.bottomMargin: _messageWrapper.defaultSpacing
+            
+            Component.onCompleted: {
+                if (root.isLocal) {
+                    _messageEncryptionStatus.anchors.left = _messageWrapper.left;
+                    _messageEncryptionStatus.anchors.leftMargin = 10;
+                } else {
+                    _messageEncryptionStatus.anchors.right = _messageWrapper.right;
+                    _messageEncryptionStatus.anchors.rightMargin = 10;
                 }
-                
-                color: (root.messageEncryptedStatus ? "green" : "red")
             }
-        }
-    }
-    
-    MouseArea {
-        anchors.fill: parent
-        
-        onDoubleClicked: {
-            console.log(messageIndex);
             
-            isChosen = true;
+            border {
+                width: 1
+                color: "#626262"
+            }
             
-            messageChosen(messageIndex);
-        }
-        
-        onClicked: {
-            if (!isChosen) return;
-            
-            isChosen = false;
-            
-            resetMessageChoosing(messageIndex);
+            color: (root.messageEncryptedStatus ? "green" : "red")
         }
     }
 }

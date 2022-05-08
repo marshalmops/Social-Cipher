@@ -16,11 +16,10 @@ public:
     virtual bool generateKeys(CipherKey &privateKey,
                               CipherKey &publicKey) const override;
     
-   
-    virtual QByteArray encodeString(const QString &string,
-                                    const CipherKey &publicKey) const override;
-    virtual QString decodeString(const QByteArray &bytes,
-                                 const CipherKey &privateKey) const override;
+    virtual QByteArray encodeBytes(const QByteArray &bytes,
+                                   const CipherKey &publicKey) const override;
+    virtual QByteArray decodeBytes(const QByteArray &bytes,
+                                   const CipherKey &privateKey) const override;
 };
 
 #endif // RSAENCODER_H

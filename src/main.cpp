@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     
     qmlRegisterUncreatableType<Error>("com.SocialCipher.Entities", 1, 0, "error", "");
+    qmlRegisterUncreatableType<AttachmentLocalFileLink>("com.SocialCipher.Entities", 1, 0, "attachmentLocalFileLink", "");
     
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, 

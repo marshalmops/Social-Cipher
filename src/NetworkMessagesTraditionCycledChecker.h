@@ -12,16 +12,16 @@ public:
     explicit NetworkMessagesTraditionCycledChecker(std::unique_ptr<NetworkDialogsFacadeInterface> &&dialogsFacade,
                                                    std::unique_ptr<NetworkDialogMessagesFacadeInterface> &&dialogMessagesFacade);
 
-    virtual Error check(std::vector<MessageEntity> &newMessages) override;
+    virtual Error check(std::vector<std::shared_ptr<MessageEntityBase>> &newMessages) override;
     
 //    virtual void prepare() override;
     
 protected:
-    Error initializeLastMessagesOfDialogs(const std::vector<DialogEntity> &dialogs);
+    Error initializeLastMessagesOfDialogs(const std::vector<std::unique_ptr<DialogEntityBase>> &dialogs);
     
     std::unique_ptr<NetworkDialogsFacadeInterface> m_dialogsFacade;
     
-    QHash<DialogEntity::EntityId, MessageEntity::EntityId> m_lastMessagesOfDialogs;
+    QHash<DialogEntityBase::EntityId, MessageEntityBase::EntityId> m_lastMessagesOfDialogs;
 };
 
 #endif // NETWORKMESSAGESTRADITIONCYCLEDCHECKER_H

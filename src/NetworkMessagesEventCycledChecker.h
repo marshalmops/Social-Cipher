@@ -12,7 +12,7 @@ public:
 //    void startMessagesCycle(const EntityInterface::EntityId peerId);
 //    void pauseMessagesCycle();
     
-    virtual Error check(std::vector<MessageEntity> &newMessages) override;
+    virtual Error check(std::vector<std::shared_ptr<MessageEntityBase>> &newMessages) override;
 //    virtual void prepare() override;
     
 //    void setPeerId(const EntityInterface::EntityId peerId);

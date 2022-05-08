@@ -23,6 +23,4 @@ private:
     bool    m_isCritical;
 };
 
-//Q_DECLARE_METATYPE(Error)
-
 #endif // ERROR_H

@@ -19,7 +19,11 @@ bool NetworkRequestExecutorImpl::executeGetRequest(const QUrl &url,
     
     auto reply = m_networkManager.get(request);
     
-    if (!getResponse(reply, jsonResponse)) return false;
+    QByteArray responseBytes;
+    
+    if (!getResponse(reply, responseBytes)) return false;
+    
+    jsonResponse = QJsonDocument::fromJson(responseBytes).object();
     
     return true;
 }
@@ -38,7 +42,42 @@ bool NetworkRequestExecutorImpl::executePostRequest(const QUrl &url,
     
     auto reply = m_networkManager.post(request, postPayload);
     
-    if (!getResponse(reply, jsonResponse)) return false;
+    QByteArray responseBytes;
+    
+    if (!getResponse(reply, responseBytes)) return false;
+    
+    jsonResponse = QJsonDocument::fromJson(responseBytes).object();
+    
+    return true;
+}
+
+bool NetworkRequestExecutorImpl::executePostRequestUsingMultipart(const QUrl &url,
+                                                                  QHttpMultiPart *multipartPayload, 
+                                                                  QJsonObject &jsonResponse)
+{
+    auto netSettings  = NetworkSettings::getInstance();
+
+    QNetworkRequest request{url};
+    
+    auto reply = m_networkManager.post(request, multipartPayload);
+    
+    QByteArray responseBytes;
+    
+    if (!getResponse(reply, responseBytes)) return false;
+    
+    jsonResponse = QJsonDocument::fromJson(responseBytes).object();
+    
+    return true;
+}
+
+bool NetworkRequestExecutorImpl::downloadByLink(const QUrl &url, 
+                                                QByteArray &downloadedBytes)
+{
+    QNetworkRequest request{url};
+    
+    auto reply = m_networkManager.get(request);
+    
+    if (!getResponse(reply, downloadedBytes, false)) return false;
     
     return true;
 }
@@ -48,13 +87,9 @@ void NetworkRequestExecutorImpl::abortCurrentRequest()
     m_currentNetworkReply->abort();
 }
 
-//void NetworkRequestExecutorImpl::prepare()
-//{
-//    m_networkManager.moveToThread(QThread::currentThread());
-//}
-
 bool NetworkRequestExecutorImpl::getResponse(QNetworkReply *const reply,
-                                             QJsonObject &jsonResponse)
+                                             QByteArray &responseBytes,
+                                             bool toJson)
 {
     m_currentNetworkReply = reply;
     
@@ -74,7 +109,15 @@ bool NetworkRequestExecutorImpl::getResponse(QNetworkReply *const reply,
     } else {
         auto rawReplyBody = reply->readAll();
         
-        if (!jsonFromBytes(rawReplyBody, jsonResponse)) return false;
+        if (toJson) {
+            QJsonObject jsonResponse;
+            
+            if (!jsonFromBytes(rawReplyBody, jsonResponse))
+                return false;
+            
+            responseBytes = (QJsonDocument{jsonResponse}.toJson());
+        } else
+            responseBytes = rawReplyBody;
     }
     
     QObject::disconnect(reply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);

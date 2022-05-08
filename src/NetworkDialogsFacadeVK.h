@@ -3,18 +3,19 @@
 
 #include "NetworkDialogsFacadeInterface.h"
 #include "NetworkFacadeVK.h"
-#include "EntityJsonParserVK.h"
+
+#include "DialogJsonParserVK.h"
 
 class NetworkDialogsFacadeVK
         : public NetworkDialogsFacadeInterface,
           public NetworkFacadeVK
 {
 public:
-    NetworkDialogsFacadeVK(const std::shared_ptr<EntityJsonParserVK> &parser, 
+    NetworkDialogsFacadeVK(const std::shared_ptr<DialogJsonParserVK> &dialogsParser, 
                            const std::shared_ptr<NetworkRequestExecutorInterface> &executor);
     
-    virtual Error getDialogs (std::vector<DialogEntity> &dialogs) override;
-    virtual Error getPeerName(const DialogEntity::EntityId peerId, 
+    virtual Error getDialogs (std::vector<std::unique_ptr<DialogEntityBase>> &dialogs) override;
+    virtual Error getPeerName(const DialogEntityBase::EntityId peerId, 
                               QString &peerName) override; 
     
     virtual bool initialize() override;

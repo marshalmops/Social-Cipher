@@ -27,11 +27,13 @@ QVariant DialogsModel::data(const QModelIndex &index, int role) const
     auto &curDialog      = m_dialogs[index.row()];//curDialogId];qInfo() << curDialogId;
     auto &curLastMessage = curDialog->getLastMessage();
     
+    if (!curLastMessage.get()) return QVariant{};
+    
     switch (role) {
-        case UserRolesIds::URI_DIALOG_PEER_ID:           data = curDialog->getPeerId();                           break;
-        case UserRolesIds::URI_DIALOG_PEER_NAME:         data = curDialog->getPeerName();                         break;
-        case UserRolesIds::URI_DIALOG_LAST_MESSAGE_TEXT: data = curLastMessage.getText();                         break;
-        case UserRolesIds::URI_DIALOG_LAST_MESSAGE_TIME: data = curLastMessage.getTime().toString("dd.MM hh:mm"); break;
+        case UserRolesIds::URI_DIALOG_PEER_ID:           data = curDialog->getPeerId();                            break;
+        case UserRolesIds::URI_DIALOG_PEER_NAME:         data = curDialog->getPeerName();                          break;
+        case UserRolesIds::URI_DIALOG_LAST_MESSAGE_TEXT: data = curLastMessage->getText();                         break;
+        case UserRolesIds::URI_DIALOG_LAST_MESSAGE_TIME: data = curLastMessage->getTime().toString("dd.MM hh:mm"); break;
     }
     
     return data;
@@ -51,7 +53,7 @@ QHash<int, QByteArray> DialogsModel::roleNames() const
 
 void DialogsModel::openDialog(const quint64 dialogIndex)
 {
-    std::shared_ptr<DialogEntity> curDialog;
+    std::shared_ptr<DialogEntityBase> curDialog;
     
     if (!getDialogById(dialogIndex, curDialog)) {
         emit errorOccured(Error{"Choosen dialog can't be found!"});
@@ -74,19 +76,25 @@ void DialogsModel::resetCurrentDialog()
     m_curDialogId = 0;
 }
 
-void DialogsModel::newMessagesOccured(const std::vector<MessageEntity> messages)
+void DialogsModel::newMessagesOccured(std::vector<std::shared_ptr<MessageEntityBase>> messages)
 {
-    foreach (const auto& message, messages) {
-        if (message.isLocal()) continue;
+    for (auto messageIter = messages.begin(); messageIter != messages.end(); ++messageIter) {
+        std::shared_ptr<MessageEntityBase>& message{*messageIter};
         
-        MessageEntity::EntityId fromId = message.getFromId();
+        if (message->isLocal()) continue;
         
-        std::shared_ptr<DialogEntity> curDialog;
+        MessageEntityBase::EntityId fromId = message->getFromId();
+        
+        std::shared_ptr<DialogEntityBase> curDialog;
         
         if (!getDialogById(fromId, curDialog)) {
-            DialogEntity newDialog{fromId};
+            // FIXME
             
-            newDialog.appendBufferedMessage(message);
+            std::unique_ptr<DialogEntityBase> newDialog{std::make_unique<DialogEntityBase>(fromId)};
+            
+            //message.reset();
+            
+            newDialog->appendBufferedMessage(message);
             
             insertDialogRow(newDialog);
             
@@ -115,7 +123,7 @@ void DialogsModel::initializeDialogs()
         return;
     }
     
-    std::vector<DialogEntity> dialogs;
+    std::vector<std::unique_ptr<DialogEntityBase>> dialogs;
     
     auto err = m_dialogsFacade->getDialogs(dialogs);
     
@@ -127,13 +135,15 @@ void DialogsModel::initializeDialogs()
     
     auto networkSettings = NetworkSettings::getInstance();
     
-    foreach (auto dialog, dialogs) {
-        if (dialog.getPeerId() == networkSettings->getLocalPeerId()) continue;
+    for (auto dialogIter = dialogs.begin(); dialogIter != dialogs.end(); ++dialogIter) {
+        auto &dialog{*dialogIter};
         
-        if (dialog.getPeerName().isEmpty()) {
+        if (dialog->getPeerId() == networkSettings->getLocalPeerId()) continue;
+        
+        if (dialog->getPeerName().isEmpty()) {
             QString peerName{};
             
-            err = m_dialogsFacade->getPeerName(dialog.getPeerId(), peerName);
+            err = m_dialogsFacade->getPeerName(dialog->getPeerId(), peerName);
             
             if (err.isValid()) {
                 emit errorOccured(Error{"Getting peer name error!"});
@@ -141,16 +151,16 @@ void DialogsModel::initializeDialogs()
                 return;
             }
             
-            if (!dialog.setPeerName(peerName)) {
+            if (!dialog->setPeerName(peerName)) {
                 emit errorOccured(Error{"Setting peer name error!"});
                 
                 return;
             }
         }
         
-        std::vector<MessageEntity> curDialogMessages;
+        std::vector<std::shared_ptr<MessageEntityBase>> curDialogMessages;
         
-        err = m_dialogMessagesFacade->getDialogMessages(dialog.getPeerId(), curDialogMessages);
+        err = m_dialogMessagesFacade->getDialogMessages(dialog->getPeerId(), curDialogMessages);
         
         if (err.isValid()) {
             emit errorOccured(err);
@@ -158,15 +168,15 @@ void DialogsModel::initializeDialogs()
             return;
         }
         
-        foreach (const auto &message, curDialogMessages) {
-            if (!dialog.appendBufferedMessage(message)) {
+        for (auto messagesIter = curDialogMessages.begin(); messagesIter != curDialogMessages.end(); ++messagesIter) {
+            if (!dialog->appendBufferedMessage(*messagesIter)) {
                 emit errorOccured(Error{"Messages appending error!", true});
                 
                 return;
             }
         }
         
-        if (!dialog.isValid()) {
+        if (!dialog->isValid()) {
             emit errorOccured(Error{"Loaded dialogs are not correct!", true});
             
             return;
@@ -214,8 +224,8 @@ void DialogsModel::resetDialogs()
     emit dialogsReset();
 }
 
-void DialogsModel::setDialogsModelFacades(NetworkDialogsFacadeInterface *dialogsFacade,
-                                          std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogMessagesFacade)
+void DialogsModel::setDialogsModelNetworkInterface(NetworkDialogsFacadeInterface *dialogsFacade,
+                                                   std::shared_ptr<NetworkDialogMessagesFacadeInterface> dialogMessagesFacade)
 {
     m_dialogsFacade        = std::unique_ptr<NetworkDialogsFacadeInterface>(dialogsFacade);
     m_dialogMessagesFacade = dialogMessagesFacade;
@@ -244,13 +254,13 @@ void DialogsModel::resetDialogsEncryption()
     }
 }
 
-void DialogsModel::insertDialogRow(const DialogEntity &dialog)
+void DialogsModel::insertDialogRow(std::unique_ptr<DialogEntityBase> &dialog)
 {
     auto curDialogsCount = rowCount();
     
     emit beginInsertRows(QModelIndex(), curDialogsCount, curDialogsCount);
     
-    m_dialogs.push_back(std::make_shared<DialogEntity>(std::move(dialog)));
+    m_dialogs.push_back(std::shared_ptr<DialogEntityBase>(dialog.release()));
     
     emit endInsertRows();
 }
@@ -292,7 +302,7 @@ bool DialogsModel::getIdOfDialogByIndex(const uint32_t index,
 }
 
 bool DialogsModel::getDialogById(const EntityInterface::EntityId dialogId,
-                                 std::shared_ptr<DialogEntity> &dialog) const
+                                 std::shared_ptr<DialogEntityBase> &dialog) const
 {
     foreach (const auto &curDialog, m_dialogs) {
         if (curDialog->getPeerId() == dialogId) {

@@ -32,12 +32,12 @@ const QString NetworkDialogMessagesFacadeInterface::getStringByCommandCode(const
     return commandsHash.value(code);
 }
 
-bool NetworkDialogMessagesFacadeInterface::getCommandByMessage(const MessageEntity &message,
+bool NetworkDialogMessagesFacadeInterface::getCommandByMessage(const std::shared_ptr<MessageEntityBase> &message,
                                                                CommandCode &commandCode,
                                                                QString &commandContent) const
 {
     auto fullCommandLength = C_COMMAND_LENGTH + strlen(C_COMMAND_START);
-    QString messageContent = message.getText();
+    QString messageContent = message->getText();
     
     if (messageContent.length() < fullCommandLength)
         return true;
@@ -59,10 +59,12 @@ bool NetworkDialogMessagesFacadeInterface::getCommandByMessage(const MessageEnti
     return true;
 }
 
-NetworkDialogMessagesFacadeInterface::NetworkDialogMessagesFacadeInterface(const std::shared_ptr<EntityJsonParserInterface> &entityParser,
+NetworkDialogMessagesFacadeInterface::NetworkDialogMessagesFacadeInterface(std::unique_ptr<IncomingMessagesProcessorBase> &messagesProcessor,
                                                                            const std::shared_ptr<NetworkRequestExecutorInterface> &executor)
     : NetworkFacadeInterface{executor},
-      NetworkFacadeUsingEntityParser{entityParser}
+      m_messagesProcessor   {messagesProcessor.release()}
+//      m_messagesFilter      {messagesProcessor},
+//      m_messagesParser      {messagesParser}
 {
     
 }
@@ -71,17 +73,7 @@ Error NetworkDialogMessagesFacadeInterface::sendCommand(const CommandCode comman
                                                         const QString commandContent,
                                                         const EntityInterface::EntityId peerId) const
 {
-    MessageEntity commandMessage = generateCommandMessage(commandCode,
-                                                          commandContent);
+    std::shared_ptr<MessageEntityBase> commandMessage = generateCommandMessage(commandCode, commandContent);
     
     return sendMessage(commandMessage, peerId);
-}
-
-MessageEntity NetworkDialogMessagesFacadeInterface::generateCommandMessage(const CommandCode command,
-                                                                           const QString &content) const
-{
-    QString messageText = QString(C_COMMAND_START) + getStringByCommandCode(command) + content;
-    MessageEntity message{messageText};
-    
-    return message;
 }

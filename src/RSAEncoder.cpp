@@ -20,22 +20,22 @@ bool RSAEncoder::generateKeys(CipherKey &privateKey,
     return true;
 }
 
-QByteArray RSAEncoder::encodeString(const QString &string,
+QByteArray RSAEncoder::encodeBytes(const QByteArray &bytes,
                                     const CipherKey &publicKey) const
 {
     QRSAEncryption e;
     
-    QByteArray encodedString = e.encode(string.toUtf8(), publicKey.getBytes());
+    QByteArray encodedBytes = e.encode(bytes, publicKey.getBytes());
     
-    return encodedString;
+    return encodedBytes;
 }
 
-QString RSAEncoder::decodeString(const QByteArray &bytes,
-                                 const CipherKey &privateKey) const
+QByteArray RSAEncoder::decodeBytes(const QByteArray &bytes,
+                                   const CipherKey &privateKey) const
 {
     QRSAEncryption e;
     
-    QString decodedString = QString::fromUtf8(e.decode(bytes, privateKey.getBytes()));
+    QByteArray decodedBytes = e.decode(bytes, privateKey.getBytes());
 
-    return decodedString;
+    return decodedBytes;
 }

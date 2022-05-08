@@ -21,8 +21,13 @@
         <file>BrandText.qml</file>
         <file>TitleText.qml</file>
         <file>BackButton.qml</file>
+        <file>AttachmentDelegate.qml</file>
+        <file>AttachmentToShowDelegate.qml</file>
+        <file>AttachmentImage.qml</file>
+        <file>AttachmentText.qml</file>
     </qresource>
     <qresource prefix="/attachments">
         <file>Rancho-Regular.ttf</file>
+        <file>docIcon.png</file>
     </qresource>
 </RCC>

@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "Error.h"
+
 #include "NetworkRequestExecutorInterface.h"
 
 class NetworkFacadeInterface

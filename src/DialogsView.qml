@@ -52,6 +52,7 @@ ViewBase {
             peerId: dialogPeerId
             
             onDialogClicked: function(peerId) {
+                appExecManager.startLoading();
                 dialogsModel.openDialog(peerId);
             }
         }

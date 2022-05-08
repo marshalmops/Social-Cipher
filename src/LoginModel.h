@@ -21,7 +21,7 @@ signals:
     void socialNetworkChanged(const NetworkSettings::SocialNetwork socialNetwork);
     
 public slots:
-    void setLoginModelFacades(NetworkLoginFacadeInterface *loginFacade);
+    void setLoginModelNetworkInterface(NetworkLoginFacadeInterface *loginFacade);
     
     void signIn();  // qml.
     void signInWithToken(const QString token);  // qml.

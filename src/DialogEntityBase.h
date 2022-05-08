@@ -1,26 +1,30 @@
-#ifndef DIALOGENTITY_H
-#define DIALOGENTITY_H
+#ifndef DIALOGENTITYBASE_H
+#define DIALOGENTITYBASE_H
 
 #include <queue>
 
 #include "EntityInterface.h"
-#include "MessageEntity.h"
+#include "MessageEntityBase.h"
+
 #include "CipherKey.h"
 
-class DialogEntity : public EntityInterface
+class DialogEntityBase : public EntityInterface
 {
 public:
-    DialogEntity();
-    DialogEntity(const EntityId peerId,
+    using MessageListElement = std::shared_ptr<MessageEntityBase>;
+    using MessagesList       = std::vector<MessageListElement>;
+    
+    DialogEntityBase();
+    DialogEntityBase(const EntityId peerId,
                  const QString peerName = QString(),
                  const CipherKey &localPrivateKey = CipherKey(),
                  const CipherKey &localPublicKey = CipherKey(),
                  const CipherKey &remotePublicKey = CipherKey());
     
-    EntityId                          getPeerId     () const;
-    const QString&                    getPeerName   () const;
-    const MessageEntity&              getLastMessage() const;
-    const std::vector<MessageEntity>& getMessages   () const;
+    EntityId                  getPeerId     () const;
+    const QString&            getPeerName   () const;
+    const MessageListElement& getLastMessage() const;
+    const MessagesList&       getMessages   () const;
     
     bool isEncrypted() const;
     
@@ -30,10 +34,10 @@ public:
     
     void resetKeys();
     
-    MessageEntity takeBufferedMessage();
+    MessageListElement takeBufferedMessage();
     
-    bool appendBufferedMessage(const MessageEntity &message);
-    bool appendMessage        (const MessageEntity &message);
+    bool appendBufferedMessage(const MessageListElement &message);
+    bool appendMessage        (const MessageListElement &message);
 
     bool setPeerName (const QString &peerName);
     bool setLocalKeys(const CipherKey &localPublicKey,
@@ -45,12 +49,12 @@ public:
     
     virtual bool isValid() const override;
     
-private:
+protected:
     EntityId      m_peerId;
     QString       m_peerName;
     
-    std::vector<MessageEntity> m_messages;
-    std::queue<MessageEntity>  m_bufferedMessages;
+    MessagesList                   m_messages;
+    std::queue<MessageListElement> m_bufferedMessages;
     
     CipherKey m_localPrivateKey;
     CipherKey m_localPublicKey;
@@ -59,4 +63,4 @@ private:
     bool m_isInitChecked;
 };
 
-#endif // DIALOGENTITY_H
+#endif // DIALOGENTITYBASE_H

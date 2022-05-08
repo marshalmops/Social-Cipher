@@ -23,17 +23,38 @@ CONFIG += c++14
 SOURCES += \
         AppExecutionManager.cpp \
         AppInitializer.cpp \
+        AttachmentContentBase.cpp \
+        AttachmentDefinerBase.cpp \
+        AttachmentDefinerVK.cpp \
+        AttachmentEntityBase.cpp \
+        AttachmentEntityVK.cpp \
+        AttachmentEntityVKUsingIdString.cpp \
+        AttachmentEntityVKUsingLink.cpp \
+        AttachmentJsonParserInterface.cpp \
+        AttachmentJsonParserVK.cpp \
+        AttachmentLocalFileLink.cpp \
+        AttachmentManagerBase.cpp \
+        AttachmentManagerVK.cpp \
         CipherKey.cpp \
-        DialogEntity.cpp \
+        DialogEntityBase.cpp \
+        DialogJsonParserInterface.cpp \
+        DialogJsonParserVK.cpp \
         DialogMessagesModel.cpp \
         DialogsModel.cpp \
         EncoderInterface.cpp \
         EntityInterface.cpp \
         EntityJsonParserInterface.cpp \
-        EntityJsonParserVK.cpp \
         Error.cpp \
+        IncomingMessagesProcessorBase.cpp \
+        IncomingMessagesProcessorVK.cpp \
         LoginModel.cpp \
-        MessageEntity.cpp \
+        MessageEntityBase.cpp \
+        MessageFilterInterface.cpp \
+        MessageFilterVK.cpp \
+        MessageJsonParserInterface.cpp \
+        MessageJsonParserVK.cpp \
+        NetworkAttachmentFacadeInterface.cpp \
+        NetworkAttachmentFacadeVK.cpp \
         NetworkCheckingManager.cpp \
         NetworkCycledCheckerInterface.cpp \
         NetworkDialogMessagesFacadeInterface.cpp \
@@ -52,6 +73,11 @@ SOURCES += \
         NetworkRequestExecutorInterface.cpp \
         NetworkSettings.cpp \
         RSAEncoder.cpp \
+        RelatedToAttachmentsProcessingBase.cpp \
+        RelatedToAttachmentsProcessingVK.cpp \
+        RelatedToEntityProcessingBase.cpp \
+        RelatedToMessagesProcessing.cpp \
+        RelatedToMessagesProcessingVK.cpp \
         SettingsBase.cpp \
         main.cpp
 
@@ -71,17 +97,38 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     AppExecutionManager.h \
     AppInitializer.h \
+    AttachmentContentBase.h \
+    AttachmentDefinerBase.h \
+    AttachmentDefinerVK.h \
+    AttachmentEntityBase.h \
+    AttachmentEntityVK.h \
+    AttachmentEntityVKUsingIdString.h \
+    AttachmentEntityVKUsingLink.h \
+    AttachmentJsonParserInterface.h \
+    AttachmentJsonParserVK.h \
+    AttachmentLocalFileLink.h \
+    AttachmentManagerBase.h \
+    AttachmentManagerVK.h \
     CipherKey.h \
-    DialogEntity.h \
+    DialogEntityBase.h \
+    DialogJsonParserInterface.h \
+    DialogJsonParserVK.h \
     DialogMessagesModel.h \
     DialogsModel.h \
     EncoderInterface.h \
     EntityInterface.h \
     EntityJsonParserInterface.h \
-    EntityJsonParserVK.h \
     Error.h \
+    IncomingMessagesProcessorBase.h \
+    IncomingMessagesProcessorVK.h \
     LoginModel.h \
-    MessageEntity.h \
+    MessageEntityBase.h \
+    MessageFilterInterface.h \
+    MessageFilterVK.h \
+    MessageJsonParserInterface.h \
+    MessageJsonParserVK.h \
+    NetworkAttachmentFacadeInterface.h \
+    NetworkAttachmentFacadeVK.h \
     NetworkCheckingManager.h \
     NetworkCycledCheckerInterface.h \
     NetworkDialogMessagesFacadeInterface.h \
@@ -100,6 +147,13 @@ HEADERS += \
     NetworkRequestExecutorInterface.h \
     NetworkSettings.h \
     RSAEncoder.h \
+    RelatedToAttachmentsProcessingBase.h \
+    RelatedToAttachmentsProcessingVK.h \
+    RelatedToEntityProcessingBase.h \
+    RelatedToMessagesProcessingBase.h \
+    RelatedToMessagesProcessingVK.h \
     SettingsBase.h
 
 include($$PWD/../Qt-Secret/src/Qt-Secret.pri)
+
+DISTFILES +=

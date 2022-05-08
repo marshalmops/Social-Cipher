@@ -1,6 +1,6 @@
-#include "DialogEntity.h"
+#include "DialogEntityBase.h"
 
-DialogEntity::DialogEntity()
+DialogEntityBase::DialogEntityBase()
     : m_peerId    {0},
       m_peerName  {},
       m_localPrivateKey{},
@@ -11,7 +11,7 @@ DialogEntity::DialogEntity()
     
 }
 
-DialogEntity::DialogEntity(const EntityId peerId,
+DialogEntityBase::DialogEntityBase(const EntityId peerId,
                            const QString peerName,
                            const CipherKey &localPrivateKey,
                            const CipherKey &localPublicKey,
@@ -25,32 +25,32 @@ DialogEntity::DialogEntity(const EntityId peerId,
 {
 }
 
-EntityInterface::EntityId DialogEntity::getPeerId() const
+EntityInterface::EntityId DialogEntityBase::getPeerId() const
 {
     return m_peerId;
 }
 
-const QString &DialogEntity::getPeerName() const
+const QString &DialogEntityBase::getPeerName() const
 {
     return m_peerName;
 }
 
-const MessageEntity& DialogEntity::getLastMessage() const
+const DialogEntityBase::MessageListElement& DialogEntityBase::getLastMessage() const
 {
     if (m_bufferedMessages.empty()) {
         if (!m_messages.empty()) return m_messages.back();
-        else                     return MessageEntity{};
+        else                     return std::unique_ptr<MessageEntityBase>{};
     }
     
     return m_bufferedMessages.back();
 }
 
-const std::vector<MessageEntity> &DialogEntity::getMessages() const
+const DialogEntityBase::MessagesList& DialogEntityBase::getMessages() const
 {
     return m_messages;
 }
 
-bool DialogEntity::isEncrypted() const
+bool DialogEntityBase::isEncrypted() const
 {
     if (m_localPrivateKey.getBytes().isEmpty()
      || m_localPublicKey.getBytes().isEmpty()
@@ -62,63 +62,58 @@ bool DialogEntity::isEncrypted() const
     return true;
 }
 
-CipherKey DialogEntity::getLocalPrivateKey() const
+CipherKey DialogEntityBase::getLocalPrivateKey() const
 {
     return m_localPrivateKey;
 }
 
-CipherKey DialogEntity::getLocalPuplicKey() const
+CipherKey DialogEntityBase::getLocalPuplicKey() const
 {
     return m_localPublicKey;
 }
 
-CipherKey DialogEntity::getRemotePublicKey() const
+CipherKey DialogEntityBase::getRemotePublicKey() const
 {
     return m_remotePublicKey;
 }
 
-void DialogEntity::resetKeys()
+void DialogEntityBase::resetKeys()
 {
     m_localPrivateKey.resetBytes();
     m_localPublicKey.resetBytes();
     m_remotePublicKey.resetBytes();
 }
 
-MessageEntity DialogEntity::takeBufferedMessage()
+DialogEntityBase::MessageListElement DialogEntityBase::takeBufferedMessage()
 {
-    if (m_bufferedMessages.empty()) return MessageEntity{};
+    if (m_bufferedMessages.empty()) return DialogEntityBase::MessageListElement{nullptr};
     
-    //MessageEntity message = m_bufferedMessages.back();
-    
-    //m_bufferedMessages.pop_back();
-    
-    MessageEntity message = m_bufferedMessages.front();
+    DialogEntityBase::MessageListElement message{m_bufferedMessages.front()};
     
     m_bufferedMessages.pop();
     
     return message;
 }
 
-bool DialogEntity::appendBufferedMessage(const MessageEntity &message)
+bool DialogEntityBase::appendBufferedMessage(const DialogEntityBase::MessageListElement &message)
 {
-    if (!message.isValid()) return false;
+    if (!message->isValid()) return false;
     
-    //m_bufferedMessages.push_back(message);
     m_bufferedMessages.push(message);
     
     return true;
 }
 
-bool DialogEntity::appendMessage(const MessageEntity &message)
+bool DialogEntityBase::appendMessage(const DialogEntityBase::MessageListElement &message)
 {
-    if (!message.isValid()) return false;
+    if (!message->isValid()) return false;
     
     m_messages.push_back(message);
     
     return true;
 }
 
-bool DialogEntity::setPeerName(const QString &peerName)
+bool DialogEntityBase::setPeerName(const QString &peerName)
 {
     if (peerName.isEmpty()) return false;
     
@@ -127,7 +122,7 @@ bool DialogEntity::setPeerName(const QString &peerName)
     return true;
 }
 
-bool DialogEntity::setLocalKeys(const CipherKey &localPublicKey,
+bool DialogEntityBase::setLocalKeys(const CipherKey &localPublicKey,
                                 const CipherKey &localPrivateKey)
 {
     if (localPublicKey.getBytes().isEmpty()
@@ -142,7 +137,7 @@ bool DialogEntity::setLocalKeys(const CipherKey &localPublicKey,
     return true;
 }
 
-bool DialogEntity::setRemoteKey(const CipherKey &remotePublicKey)
+bool DialogEntityBase::setRemoteKey(const CipherKey &remotePublicKey)
 {
     if (remotePublicKey.getBytes().isEmpty()) return false;
     
@@ -151,17 +146,17 @@ bool DialogEntity::setRemoteKey(const CipherKey &remotePublicKey)
     return true;
 }
 
-bool DialogEntity::isInitChecked()
+bool DialogEntityBase::isInitChecked()
 {
     return m_isInitChecked;
 }
 
-void DialogEntity::setIsInitChecked()
+void DialogEntityBase::setIsInitChecked()
 {
     m_isInitChecked = true;
 }
 
-bool DialogEntity::isValid() const
+bool DialogEntityBase::isValid() const
 {
     if (m_peerId == 0) return false;
     

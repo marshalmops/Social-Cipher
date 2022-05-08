@@ -12,10 +12,10 @@ public:
     virtual bool generateKeys(CipherKey &privateKey,
                               CipherKey &publicKey) const = 0;
     
-    virtual QByteArray encodeString(const QString &string,
-                                    const CipherKey &publicKey) const = 0;
-    virtual QString    decodeString(const QByteArray &bytes,
-                                    const CipherKey &privateKey) const = 0;
+    virtual QByteArray encodeBytes(const QByteArray &bytes,
+                                   const CipherKey &publicKey) const = 0;
+    virtual QByteArray decodeBytes(const QByteArray &bytes,
+                                   const CipherKey &privateKey) const = 0;
 };
 
 #endif // ENCODERINTERFACE_H

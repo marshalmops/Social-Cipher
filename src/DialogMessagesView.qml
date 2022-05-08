@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Dialogs
 import "qrc:/components"
 
 ViewBase {
@@ -9,6 +10,15 @@ ViewBase {
     readonly property int messageWidthBreakpoint: 200
     property bool isEncrypted: false
     
+    property var attachmentsUrls: []
+    
+    function handleBackButtonClick() {
+        messagesListView.chosenMessageIndex = -1;
+        _root.attachmentsUrls.splice(0);
+        
+        dialogMessagesModel.unsetDialogMessages();
+    }
+    
     ListView {
         id: messagesListView
         
@@ -16,10 +26,7 @@ ViewBase {
         spacing: 5
         
         property int chosenMessageIndex: -1
-        
-//        onChosenMessageIndexChanged: {
-            
-//        }
+
         function isChosenMessageIndexValid() {
             return chosenMessageIndex >= 0;
         }
@@ -42,9 +49,7 @@ ViewBase {
                 anchors.left: parent.left
                 
                 onClicked: {
-                    messagesListView.chosenMessageIndex = -1;
-                    
-                    dialogMessagesModel.unsetDialogMessages();
+                    _root.handleBackButtonClick();
                 }
             }
             
@@ -58,7 +63,7 @@ ViewBase {
                 TitleText {
                     id: _headerTitle
                     
-                    verticalAlignment:   Text.AlignVCenter
+                    verticalAlignment: Text.AlignVCenter
                     
                     text: dialogMessagesModel.peerName
                 }
@@ -68,13 +73,14 @@ ViewBase {
         delegate: MessageDelegate {
             width: messagesListView.width
             
-            messageRectWidth: (messagesListView.width > messageWidthBreakpoint ? messagesListView.width * 0.8 : messagesListView.width)
+            messageRectWidth: (messagesListView.width > _root.messageWidthBreakpoint ? messagesListView.width * 0.8 : messagesListView.width)
             
-            messageText:            messageContent
-            messageDate:            messageTime
-            isLocal:                isLocalMessage
-            messageEncryptedStatus: isMessageEncypted
-            messageIndex:           index
+            messageText:              messageContent
+            messageDate:              messageTime
+            isLocal:                  isLocalMessage
+            messageEncryptedStatus:   isMessageEncypted
+            messageIndex:             index
+            messageAttachmentsToShow: messageAttachments
             
             onMessageChosen: function (index) {
                 if (messagesListView.isChosenMessageIndexValid()) {
@@ -93,12 +99,16 @@ ViewBase {
         
         footerPositioning: ListView.OverlayFooter
         
-        footer: Rectangle {
+        footer:  Rectangle {
             id: _listViewFooter
             
             width: parent.width
-            height: _buttonsColumn.height + (messagesListView.isChosenMessageIndexValid() ? (_toolbar.height + _footerControlsColumn.spacing) : 0)
+            height: _buttonsColumn.height + (messagesListView.isChosenMessageIndexValid() ? (_toolbar.height + _footerControlsColumn.spacing) : 0) + _attachmentsListRow.height
             z: 3
+            
+            Component.onCompleted: {
+                console.log(_listViewFooter.height + " (" + _listViewFooter.x + ", " + _listViewFooter.y + ")");
+            }
             
             border {
                 width: 1
@@ -106,10 +116,12 @@ ViewBase {
             }
             
             function handleMessageSending() {
-                if (_sendingMessage.inputText.length == 0) return;
+                if (_sendingMessage.inputText.length == 0 && _root.attachmentsUrls == []) return;
                 
-                dialogMessagesModel.sendMessage(_sendingMessage.inputText);
+                dialogMessagesModel.sendMessage(_sendingMessage.inputText, _root.attachmentsUrls); // LOCAL FILE URLS DROPPING HERE!!!
+                
                 _sendingMessage.cleanUp();
+                _root.attachmentsUrls = [];
             }
             
             ColumnLayout {
@@ -173,7 +185,6 @@ ViewBase {
                 }
                 
                 RowLayout {
-                    //anchors.fill: parent
                     Layout.fillWidth: true
                     
                     FlickableTextArea {
@@ -185,7 +196,7 @@ ViewBase {
                         placeholderText: qsTr("Enter your message")
                         
                         onReturnPressed: {
-                            handleMessageSending();
+                            _listViewFooter.handleMessageSending();
                         }
                     }
                     
@@ -206,7 +217,8 @@ ViewBase {
                             width: 50
                             
                             onClicked: {
-                                handleMessageSending();
+                                appExecManager.startLoading();
+                                _listViewFooter.handleMessageSending();
                             }
                         }
                         
@@ -245,9 +257,97 @@ ViewBase {
                                 dialogMessagesModel.resetEncryption();
                             }
                         }
+                        
+                        SimpleButton {
+                            id: _attachButton
+                            
+                            width: 70
+                            
+                            text: qsTr("Attach")
+                            
+                            onClicked: {
+                                _fileDialog.visible = true;
+                            }
+                            
+                        }
+                    }
+                }
+                
+                RowLayout {
+                    // attachments list:
+                    
+                    id: _attachmentsListRow
+                    
+                    Layout.fillWidth: true
+                    
+                    Flickable {
+                        id: _attachmentListFlickable
+                        
+                        implicitHeight: (_root.attachmentsUrls.length > 0 ? 50 : 0)
+                        Layout.fillWidth:  true
+                        
+                        clip: true
+                        
+                        ListView {
+                            id: _attachmentsListView
+                            
+                            anchors.fill: parent
+                            spacing: 5
+                            
+                            model: _root.attachmentsUrls
+                            
+                            delegate: AttachmentDelegate {
+                                width: _attachmentsListView.width
+                                
+                                attachmentIndex: index
+                                attachmentName:  {
+                                    return ('' + modelData).split('/').pop();
+                                }
+                                
+                                onAttachmentCanceled: function (attachmentIndex) {
+                                    // attachment removing:
+                                    
+                                    var attachmentsUrlsAfterRemoving = [];
+                                    var attachmentObjIndexAfterRemoving = 0;
+                                    
+                                    for (var attachmentObjIndex in _root.attachmentsUrls) {
+                                        if (attachmentObjIndex != attachmentIndex) {
+                                            attachmentsUrlsAfterRemoving[attachmentObjIndexAfterRemoving] = _root.attachmentsUrls[attachmentObjIndex];
+                                        
+                                            attachmentObjIndexAfterRemoving += 1;
+                                        }
+                                    }
+                                    
+                                    _root.attachmentsUrls = attachmentsUrlsAfterRemoving;
+                                }
+                            }
+                        }
                     }
                 }
             }
+        }
+    }
+    
+    FileDialog {
+        id: _fileDialog
+        
+        visible: false
+        fileMode: FileDialog.OpenFiles
+        
+        onAccepted: {
+//            for (let index in _fileDialog.selectedFiles) {
+//                _root.attachmentsUrls.push(_fileDialog.selectedFiles[index]);
+//            }
+            
+            _root.attachmentsUrls = _fileDialog.selectedFiles;
+            
+            _fileDialog.visible = false;
+        }
+        
+        onRejected: {
+            
+            
+            _fileDialog.visible = false;
         }
     }
     
@@ -258,6 +358,8 @@ ViewBase {
     }
     
     Keys.onBackPressed: {
+        _root.handleBackButtonClick();
+        
         dialogMessagesModel.unsetDialogMessages();
     }
     

@@ -23,12 +23,21 @@ public:
                                     QJsonObject &jsonResponse,
                                     const uint32_t timeout) override;
     
+    virtual bool executePostRequestUsingMultipart(const QUrl &url,
+                                                  QHttpMultiPart *multipartPayload,
+                                                  QJsonObject &jsonResponse) override;
+    
+    
+    virtual bool downloadByLink(const QUrl &url, 
+                                QByteArray &downloadedBytes) override;
+    
     virtual void abortCurrentRequest() override;
 //    virtual void prepare() override;
     
 protected:
     bool getResponse(QNetworkReply * const reply,
-                     QJsonObject &jsonResponse);
+                     QByteArray &jsonResponse,
+                     bool toJson = true);
     
 private:
     QNetworkAccessManager m_networkManager;

@@ -6,9 +6,9 @@ NetworkMessagesEventCycledChecker::NetworkMessagesEventCycledChecker(std::unique
     
 }
 
-Error NetworkMessagesEventCycledChecker::check(std::vector<MessageEntity> &newMessages)
+Error NetworkMessagesEventCycledChecker::check(std::vector<std::shared_ptr<MessageEntityBase>> &newMessages)
 {
-    std::vector<MessageEntity> newMessagesBuffer;
+    std::vector<std::shared_ptr<MessageEntityBase>> newMessagesBuffer;
     
     auto err = m_dialogMessagesFacade->tryGetMessages(newMessagesBuffer);
     
