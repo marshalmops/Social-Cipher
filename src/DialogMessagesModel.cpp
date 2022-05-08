@@ -189,8 +189,7 @@ void DialogMessagesModel::setDialogMessages(std::shared_ptr<DialogEntityBase> di
     std::shared_ptr<MessageEntityBase> curBufferedMessage;
     
     while ((curBufferedMessage = m_dialog->takeBufferedMessage()).get())
-        if (curBufferedMessage->isValid())
-            appendMessage(curBufferedMessage);
+        appendMessage(curBufferedMessage);
     
     m_dialog->setIsInitChecked();
     

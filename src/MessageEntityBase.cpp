@@ -107,7 +107,7 @@ void MessageEntityBase::setEncryptedFlag()
 
 bool MessageEntityBase::isValid() const
 {
-    if (/*m_text.isEmpty() ||*/ (m_fromId != 0 && (!m_time.isValid() || m_messageId == 0))) return false;
+    if (/*m_text.isEmpty() ||*/ (m_fromId != 0 && (!m_time.isValid() || m_messageId == 0)) || (m_text.isEmpty() && m_attachments.empty())) return false;
     
     return true;
 }

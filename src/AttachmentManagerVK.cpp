@@ -43,13 +43,16 @@ Error AttachmentManagerVK::uploadNewAttachment(const std::unique_ptr<AttachmentC
             
             break;
         }
-        case AttachmentDefinerVK::ContentExtensionId::CEI_ENCRYPTED: {
+        case AttachmentDefinerVK::ContentExtensionId::CEI_ENCRYPTED:
+        case AttachmentDefinerVK::ContentExtensionId::CEI_DOC:
+        case AttachmentDefinerVK::ContentExtensionId::CEI_DOCX:
+        case AttachmentDefinerVK::ContentExtensionId::CEI_TXT:{
             if ((err = m_attachmentsFacade->uploadDocument(attachmentContentToUpload, 0, uploadedAttachment)).isValid())
                 return err;
             
             break;
         }
-        default: return err;
+        default: return Error{"Attachment extension is invalid!"};
     }
     
 //    // saving bytes to attachments hash:

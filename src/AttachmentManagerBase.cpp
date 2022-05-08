@@ -53,6 +53,9 @@ Error AttachmentManagerBase::getAttachmentBytesByLocalPath(const QUrl &filePath,
 Error AttachmentManagerBase::getAttachmentContentByLocalPath(const QUrl &filePath,
                                                              std::unique_ptr<AttachmentContentBase> &attachmentContent)
 {
+    if (AttachmentDefinerBase::getMetaTypeByFilename(filePath.fileName()) == QMetaType::Type::UnknownType)
+        return Error{"Invalid attachment extension!"};
+    
     Error err{"Cannot get attachment content from " + filePath.path()};
     
     if (filePath.isEmpty()) return err;

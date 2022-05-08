@@ -64,12 +64,11 @@ bool MessageJsonParserVK::jsonEventsToMessages(const QJsonValue &json,
         QJsonObject messageAttachments{curEvent[EF_MESSAGE_ATTACHMENTS].toObject()};
         std::vector<std::shared_ptr<AttachmentEntityBase>> attachmentsList{};
         
-        if (!m_attachmentsParser->jsonToAttachments(messageAttachments, RelatedToAttachmentsProcessingVK::AttachmentOriginFlag::AOF_EVENTIONAL, attachmentsList)) {
-            return false;
-        }
+        m_attachmentsParser->jsonToAttachments(messageAttachments, RelatedToAttachmentsProcessingVK::AttachmentOriginFlag::AOF_EVENTIONAL, attachmentsList);
         
         MessageEntityBase newMessage{messageText, attachmentsList, false, messagePeer, messagePeer, messageId, messageTimestamp};
-        if (!newMessage.isValid()) return false;
+        
+        if (!newMessage.isValid()) continue; //return false;
         
         messages.push_back(std::make_shared<MessageEntityBase>(std::move(newMessage)));
     }
@@ -111,13 +110,11 @@ bool MessageJsonParserVK::jsonStandardToMessages(const QJsonValue &json,
         auto attachmentsJsonArray = curMessage[C_ATTACHMENTS_FIELD_NAME].toArray();
         std::vector<std::shared_ptr<AttachmentEntityBase>> attachmentsList{};
         
-        if (!m_attachmentsParser->jsonToAttachments(attachmentsJsonArray, RelatedToAttachmentsProcessingVK::AttachmentOriginFlag::AOF_STANDARD, attachmentsList)) {
-            continue;//return false;
-        }
+        m_attachmentsParser->jsonToAttachments(attachmentsJsonArray, RelatedToAttachmentsProcessingVK::AttachmentOriginFlag::AOF_STANDARD, attachmentsList);
         
         MessageEntityBase newMessage{messageText, attachmentsList, false, messageFromId, messagePeer, messageId, messageTimestamp};
         
-        if (!newMessage.isValid()) return false;
+        if (!newMessage.isValid()) continue; //return false;
         
         messages.push_back(std::make_shared<MessageEntityBase>(std::move(newMessage)));
     }
