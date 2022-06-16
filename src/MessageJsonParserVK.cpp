@@ -64,7 +64,8 @@ bool MessageJsonParserVK::jsonEventsToMessages(const QJsonValue &json,
         QJsonObject messageAttachments{curEvent[EF_MESSAGE_ATTACHMENTS].toObject()};
         std::vector<std::shared_ptr<AttachmentEntityBase>> attachmentsList{};
         
-        m_attachmentsParser->jsonToAttachments(messageAttachments, RelatedToAttachmentsProcessingVK::AttachmentOriginFlag::AOF_EVENTIONAL, attachmentsList);
+        if (!m_attachmentsParser->jsonToAttachments(messageAttachments, RelatedToAttachmentsProcessingVK::AttachmentOriginFlag::AOF_EVENTIONAL, attachmentsList))
+            continue;
         
         MessageEntityBase newMessage{messageText, attachmentsList, false, messagePeer, messagePeer, messageId, messageTimestamp};
         
@@ -110,7 +111,8 @@ bool MessageJsonParserVK::jsonStandardToMessages(const QJsonValue &json,
         auto attachmentsJsonArray = curMessage[C_ATTACHMENTS_FIELD_NAME].toArray();
         std::vector<std::shared_ptr<AttachmentEntityBase>> attachmentsList{};
         
-        m_attachmentsParser->jsonToAttachments(attachmentsJsonArray, RelatedToAttachmentsProcessingVK::AttachmentOriginFlag::AOF_STANDARD, attachmentsList);
+        if (!m_attachmentsParser->jsonToAttachments(attachmentsJsonArray, RelatedToAttachmentsProcessingVK::AttachmentOriginFlag::AOF_STANDARD, attachmentsList))
+            continue;
         
         MessageEntityBase newMessage{messageText, attachmentsList, false, messageFromId, messagePeer, messageId, messageTimestamp};
         

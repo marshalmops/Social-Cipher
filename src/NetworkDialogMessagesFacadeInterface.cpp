@@ -3,9 +3,10 @@
 const QHash<NetworkDialogMessagesFacadeInterface::CommandCode, QString> &NetworkDialogMessagesFacadeInterface::getCommandsHash()
 {
     static QHash<CommandCode, QString> commandsHash = {
-        {CommandCode::CC_START_ENCRYPTION_INIT, "SENI"},
-        {CommandCode::CC_END_ENCRYPTION_INIT,   "EENI"},
-        {CommandCode::CC_RESET_ENCRYPTION,      "REEN"}
+        {CommandCode::CC_START_ENCRYPTION_INIT,    "SENI"},
+        {CommandCode::CC_END_ENCRYPTION_INIT,      "EENI"},
+        {CommandCode::CC_START_CONTENT_ENCRYPTION, "SCEN"},
+        {CommandCode::CC_RESET_ENCRYPTION,         "REEN"}
     };
     
     return commandsHash;

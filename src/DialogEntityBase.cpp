@@ -77,11 +77,17 @@ CipherKey DialogEntityBase::getRemotePublicKey() const
     return m_remotePublicKey;
 }
 
+CipherKey DialogEntityBase::getContentKey() const
+{
+    return m_contentKey;
+}
+
 void DialogEntityBase::resetKeys()
 {
     m_localPrivateKey.resetBytes();
     m_localPublicKey.resetBytes();
     m_remotePublicKey.resetBytes();
+    m_contentKey.resetBytes();
 }
 
 DialogEntityBase::MessageListElement DialogEntityBase::takeBufferedMessage()
@@ -142,6 +148,15 @@ bool DialogEntityBase::setRemoteKey(const CipherKey &remotePublicKey)
     if (remotePublicKey.getBytes().isEmpty()) return false;
     
     m_remotePublicKey = remotePublicKey;
+    
+    return true;
+}
+
+bool DialogEntityBase::setContentKey(const CipherKey &contentKey)
+{
+    if (contentKey.getBytes().isEmpty()) return false;
+    
+    m_contentKey = contentKey;
     
     return true;
 }

@@ -21,6 +21,7 @@ CONFIG += c++14
 #INCLUDEPATH += C:\Users\Admin\Documents\SocialCipher\rsa\lib
 
 SOURCES += \
+        AESEncoder.cpp \
         AppExecutionManager.cpp \
         AppInitializer.cpp \
         AttachmentContentBase.cpp \
@@ -41,7 +42,8 @@ SOURCES += \
         DialogJsonParserVK.cpp \
         DialogMessagesModel.cpp \
         DialogsModel.cpp \
-        EncoderInterface.cpp \
+        EncoderAsymmetricInterface.cpp \
+        EncoderSymmetricInterface.cpp \
         EntityInterface.cpp \
         EntityJsonParserInterface.cpp \
         Error.cpp \
@@ -95,6 +97,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
+    AESEncoder.h \
     AppExecutionManager.h \
     AppInitializer.h \
     AttachmentContentBase.h \
@@ -115,7 +118,8 @@ HEADERS += \
     DialogJsonParserVK.h \
     DialogMessagesModel.h \
     DialogsModel.h \
-    EncoderInterface.h \
+    EncoderAsymmetricInterface.h \
+    EncoderSymmetricInterface.h \
     EntityInterface.h \
     EntityJsonParserInterface.h \
     Error.h \

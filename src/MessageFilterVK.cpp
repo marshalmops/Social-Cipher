@@ -42,6 +42,8 @@ bool MessageFilterVK::filterMessagesFromEventsByAttachments(const std::vector<st
         MessageEntityBase filteredMessage{message->getText(), filteredAttachmentsToGet, message->isEncrypted(), message->getFromId(), message->getPeerId(),
                                           message->getMessageId(), message->getTime()};
         
+        if (!filteredMessage.isValid()) continue;
+        
         filteredMessages.push_back(std::make_shared<MessageEntityBase>(std::move(filteredMessage)));
     }
     
@@ -67,6 +69,8 @@ bool MessageFilterVK::filterMessagesFromStandardByAttachments(const std::vector<
         
         MessageEntityBase filteredMessage{message->getText(), filteredAttachmentsToDownload, message->isEncrypted(), message->getFromId(), message->getPeerId(),
                                           message->getMessageId(), message->getTime()};
+        
+        if (!filteredMessage.isValid()) continue;
         
         filteredMessages.push_back(std::make_shared<MessageEntityBase>(std::move(filteredMessage)));
     }

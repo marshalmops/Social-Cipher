@@ -16,6 +16,7 @@
 #include "NetworkLayerCreator.h"
 
 #include "RSAEncoder.h"
+#include "AESEncoder.h"
 
 class AppInitializer
 {

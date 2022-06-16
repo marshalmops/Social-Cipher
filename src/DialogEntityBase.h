@@ -31,6 +31,7 @@ public:
     CipherKey getLocalPrivateKey() const;
     CipherKey getLocalPuplicKey () const;
     CipherKey getRemotePublicKey() const;
+    CipherKey getContentKey     () const;
     
     void resetKeys();
     
@@ -43,6 +44,7 @@ public:
     bool setLocalKeys(const CipherKey &localPublicKey,
                       const CipherKey &localPrivateKey);
     bool setRemoteKey(const CipherKey &remotePublicKey);
+    bool setContentKey(const CipherKey &contentKey);
     
     bool isInitChecked();
     void setIsInitChecked();
@@ -59,6 +61,8 @@ protected:
     CipherKey m_localPrivateKey;
     CipherKey m_localPublicKey;
     CipherKey m_remotePublicKey;
+    
+    CipherKey m_contentKey;
     
     bool m_isInitChecked;
 };

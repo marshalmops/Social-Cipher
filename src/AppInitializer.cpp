@@ -19,9 +19,9 @@ bool AppInitializer::initializeApp(QGuiApplication                         *app,
     
     // creating models:
     
-    loginModel          = std::make_unique<LoginModel>(/*std::unique_ptr<NetworkLoginFacadeInterface>(networkLoginFacade.release())*/);
-    dialogsModel        = std::make_unique<DialogsModel>(/*std::unique_ptr<NetworkDialogsFacadeInterface>(networkDialogsFacadeForModel.release())*/);
-    dialogMessagesModel = std::make_unique<DialogMessagesModel>(std::make_unique<RSAEncoder>() /*std::unique_ptr<NetworkDialogMessagesFacadeInterface>(networkDialogMessagesFacadeForModel.release())*/);
+    loginModel          = std::make_unique<LoginModel>();
+    dialogsModel        = std::make_unique<DialogsModel>();
+    dialogMessagesModel = std::make_unique<DialogMessagesModel>(std::make_unique<RSAEncoder>(), std::make_unique<AESEncoder>());
     
     // cycled checker manager creation:
     

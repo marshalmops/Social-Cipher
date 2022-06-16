@@ -88,7 +88,7 @@ void DialogsModel::newMessagesOccured(std::vector<std::shared_ptr<MessageEntityB
         std::shared_ptr<DialogEntityBase> curDialog;
         
         if (!getDialogById(fromId, curDialog)) {
-            // FIXME
+            // FIXME: peerName is unknown
             
             std::unique_ptr<DialogEntityBase> newDialog{std::make_unique<DialogEntityBase>(fromId)};
             

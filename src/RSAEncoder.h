@@ -6,9 +6,9 @@
 
 #include <qrsaencryption.h>
 
-#include "EncoderInterface.h"
+#include "EncoderAsymmetricInterface.h"
 
-class RSAEncoder : public EncoderInterface
+class RSAEncoder : public EncoderAsymmetricInterface
 {
 public:
     RSAEncoder();

@@ -8,11 +8,13 @@ struct QUrlHasher {
 };
     
 
-DialogMessagesModel::DialogMessagesModel(std::unique_ptr<EncoderInterface> &&encoder,
+DialogMessagesModel::DialogMessagesModel(std::unique_ptr<EncoderAsymmetricInterface> &&handshakeEncoder,
+                                         std::unique_ptr<EncoderSymmetricInterface> &&contentEncoder,
                                          QObject *parent)
     : QAbstractListModel     {parent},
       m_dialogsMessagesFacade{},
-      m_encoder              {encoder.release()}
+      m_handshakeEncoder     {handshakeEncoder.release()},
+      m_contentEncoder       {contentEncoder.release()}
 {
     
 }
@@ -224,8 +226,10 @@ void DialogMessagesModel::appendMessage(std::shared_ptr<MessageEntityBase> messa
     QString messageText{message->getText()};
     
     if (m_dialog->isEncrypted()) {
-        if (!decryptMessageTextAndAttachments(attachmentsEntitiesContentHash, messageText)) 
+        if (!decryptMessageTextAndAttachments(attachmentsEntitiesContentHash, messageText)) {
+            
             return;
+        }
         
         message->setEncryptedFlag();
     }
@@ -249,7 +253,7 @@ void DialogMessagesModel::startEncryption()
     CipherKey publicKey,
               privateKey;
     
-    if (!m_encoder->generateKeys(privateKey, publicKey)) {
+    if (!m_handshakeEncoder->generateKeys(privateKey, publicKey)) {
         emit errorOccured(Error{"Keys generating error!", true});
         
         return;
@@ -324,7 +328,7 @@ void DialogMessagesModel::processCommand(const NetworkDialogMessagesFacadeInterf
             CipherKey publicKey,
                       privateKey;
             
-            if (!m_encoder->generateKeys(privateKey, publicKey)) {
+            if (!m_handshakeEncoder->generateKeys(privateKey, publicKey)) {
                 emit errorOccured(Error{"Keys generating error!", true});
                 
                 return;
@@ -346,7 +350,7 @@ void DialogMessagesModel::processCommand(const NetworkDialogMessagesFacadeInterf
             
             if (err.isValid()) emit errorOccured(err);
             
-            emit encryptionStarted();
+            //emit encryptionStarted();
             
             break;
         }
@@ -360,8 +364,71 @@ void DialogMessagesModel::processCommand(const NetworkDialogMessagesFacadeInterf
                 return;
             }
             
+            // TODO: generating AES key and sending it using CC_START_CONTENT_ENCRYPTION command...
+            
+            // generating and setting KEY...
+            
+            CipherKey contentKey{};
+            
+            if (!m_contentEncoder->generateKey(contentKey)) {
+                emit errorOccured(Error{"Content key generating error!", true});
+                
+                return;
+            }
+            
+            if (!m_dialog->setContentKey(contentKey)) {
+                emit errorOccured(Error{"Content key setting error!", true});
+                
+                return;
+            }
+            
+            // encrypting KEY with REMOTE_PUBLIC_KEY...
+            
+            QByteArray encryptedContentKey{};
+            
+            if ((encryptedContentKey = m_handshakeEncoder->encodeBytes(contentKey.getBytes(), m_dialog->getRemotePublicKey())).isEmpty()) {
+                emit errorOccured(Error{"Content key encrypting error!", true});
+                
+                return;
+            }
+            
+            // sending...
+            
+            auto err = m_dialogsMessagesFacade->sendCommand(NetworkDialogMessagesFacadeInterface::CommandCode::CC_START_CONTENT_ENCRYPTION,
+                                                            prepareDecodedBytes(encryptedContentKey),
+                                                            m_dialog->getPeerId());
+            
+            if (err.isValid()) emit errorOccured(err);
+            
             emit encryptionStarted();
             
+            break;
+        }
+        case NetworkDialogMessagesFacadeInterface::CommandCode::CC_START_CONTENT_ENCRYPTION: {
+            auto encryptedContentKey{prepareEncodedString(content)};
+            
+            // TODO: setting gotten AES key...
+            
+            // decrypting KEY with LOCAL_PRIVATE_KEY...
+            
+            QByteArray decryptedContentKey{};
+            
+            if ((decryptedContentKey = m_handshakeEncoder->decodeBytes(encryptedContentKey, m_dialog->getLocalPrivateKey())).isEmpty()) {
+                emit errorOccured(Error{"Content key decrypting error!", true});
+                
+                return;
+            }
+            
+            // setting KEY...
+            
+            if (!m_dialog->setContentKey(decryptedContentKey)) {
+                emit errorOccured(Error{"Content key setting error!", true});
+                
+                return;
+            }
+            
+            emit encryptionStarted();
+        
             break;
         }
         case NetworkDialogMessagesFacadeInterface::CommandCode::CC_RESET_ENCRYPTION: {
@@ -411,17 +478,20 @@ bool DialogMessagesModel::encryptMessageTextAndAttachments(const QString &source
                                                            std::unordered_map<QUrl, std::unique_ptr<AttachmentContentBase>, ::QUrlHasher> &attachmentsUrlsContentHash,
                                                            QString &processedMessage)
 {
-    if ((processedMessage = prepareDecodedBytes(m_encoder->encodeBytes(sourceMessage.toUtf8(), m_dialog->getRemotePublicKey()))).isEmpty()) {
-        emit errorOccured(Error{"Message encrypting error!", true});
-        
-        return false;
-    }
+    //if ((processedMessage = prepareDecodedBytes(m_handshakeEncoder->encodeBytes(sourceMessage.toUtf8(), m_dialog->getRemotePublicKey()))).isEmpty()) {
+    if (!sourceMessage.isEmpty())
+        if ((processedMessage = prepareDecodedBytes(m_contentEncoder->encodeBytes(sourceMessage.toUtf8(), m_dialog->getContentKey()))).isEmpty()) {  
+            emit errorOccured(Error{"Message encrypting error!", true});
+            
+            return false;
+        }
     
     for (auto iter = attachmentsUrlsContentHash.begin(); iter != attachmentsUrlsContentHash.end(); ++iter) {
         auto &curAttachmentContent{iter->second};
         QByteArray encodedAttachmentBytes{};
 
-        if ((encodedAttachmentBytes = m_encoder->encodeBytes(curAttachmentContent->getByteArray(), m_dialog->getRemotePublicKey())).isEmpty()) {
+        //if ((encodedAttachmentBytes = m_handshakeEncoder->encodeBytes(curAttachmentContent->getByteArray(), m_dialog->getRemotePublicKey())).isEmpty()) {
+        if ((encodedAttachmentBytes = m_contentEncoder->encodeBytes(curAttachmentContent->getByteArray(), m_dialog->getContentKey())).isEmpty()) {          
             emit errorOccured(Error{"Attachment encrypting error!", true});
             
             return false;
@@ -522,9 +592,16 @@ bool DialogMessagesModel::downloadAttachments(const std::vector<std::shared_ptr<
 bool DialogMessagesModel::decryptMessageTextAndAttachments(std::unordered_map<AttachmentEntityBase::EntityId, std::pair<std::shared_ptr<AttachmentEntityBase>, std::unique_ptr<AttachmentContentBase>>> &attachmentsEntitiesContentHash,
                                                            QString &messageText)
 {
-    messageText = QString::fromUtf8(m_encoder->decodeBytes(prepareEncodedString(messageText), m_dialog->getLocalPrivateKey()));
+    //messageText = QString::fromUtf8(m_handshakeEncoder->decodeBytes(prepareEncodedString(messageText), m_dialog->getLocalPrivateKey()));
+    QString decodedMessageText{QString::fromUtf8(m_contentEncoder->decodeBytes(prepareEncodedString(messageText), m_dialog->getContentKey()))};
 
-    if (messageText.isEmpty()) emit errorOccured(Error{"Message decoding fail!"});
+    if (decodedMessageText.isEmpty() && !messageText.isEmpty()) {
+        emit errorOccured(Error{"Message decoding fail!", true});
+        
+        return false;
+    }
+    
+    messageText = decodedMessageText;
     
     // attachments content decrypting process:
     
@@ -543,7 +620,8 @@ bool DialogMessagesModel::decryptMessageTextAndAttachments(std::unordered_map<At
         
         QByteArray attachmentBytesWithoutExtensionId{attachmentContentToDecrypt->getByteArray().first(attachmentContentToDecrypt->getByteArray().length() - 1)};
 
-        if ((decryptedAttachmentBytes = m_encoder->decodeBytes(attachmentBytesWithoutExtensionId, m_dialog->getLocalPrivateKey())).isEmpty()) {
+        //if ((decryptedAttachmentBytes = m_handshakeEncoder->decodeBytes(attachmentBytesWithoutExtensionId, m_dialog->getLocalPrivateKey())).isEmpty()) {
+        if ((decryptedAttachmentBytes = m_contentEncoder->decodeBytes(attachmentBytesWithoutExtensionId, m_dialog->getContentKey())).isEmpty()) {
             emit errorOccured(Error{"Decrypting attachment error!", true});
             
             return false;

@@ -12,7 +12,8 @@
 #include "DialogEntityBase.h"
 #include "MessageEntityBase.h"
 
-#include "EncoderInterface.h"
+#include "EncoderAsymmetricInterface.h"
+#include "EncoderSymmetricInterface.h"
 
 #include "AttachmentManagerBase.h"
 
@@ -39,7 +40,8 @@ public:
         URI_COUNT
     };
     
-    explicit DialogMessagesModel(std::unique_ptr<EncoderInterface> &&encoder,
+    explicit DialogMessagesModel(std::unique_ptr<EncoderAsymmetricInterface> &&handshakeEncoder,
+                                 std::unique_ptr<EncoderSymmetricInterface> &&contentEncoder,
                                  QObject *parent = nullptr);
     
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -109,7 +111,9 @@ private:
     
     std::shared_ptr<DialogEntityBase> m_dialog;
     
-    std::unique_ptr<EncoderInterface>                     m_encoder;
+    std::unique_ptr<EncoderAsymmetricInterface> m_handshakeEncoder;
+    std::unique_ptr<EncoderSymmetricInterface>  m_contentEncoder;    
+    
     std::shared_ptr<NetworkDialogMessagesFacadeInterface> m_dialogsMessagesFacade;
     std::shared_ptr<AttachmentManagerBase>                m_attachmentManager;
 };

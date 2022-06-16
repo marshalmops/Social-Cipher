@@ -27,6 +27,7 @@ public:
         CC_INVALID = 0,
         CC_START_ENCRYPTION_INIT,
         CC_END_ENCRYPTION_INIT,
+        CC_START_CONTENT_ENCRYPTION,
         CC_RESET_ENCRYPTION
     };
     
