@@ -57,6 +57,9 @@ signals:
     
     void messageRowInserted();
     
+    void encryptionInitiated();
+    void encryptionCanceled();
+    
     void encryptionStarted();
     void encryptionReset();
     

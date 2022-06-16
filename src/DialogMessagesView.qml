@@ -241,7 +241,12 @@ ViewBase {
                                 id: _encryptionRetryTimer
                                 
                                 interval: 5000
-                                onTriggered: _encryptButton.enabled = true;
+                                onTriggered: {
+                                    _encryptButton.enabled = true;
+                                    
+                                    if (!isEncrypted)
+                                        dialogMessagesModel.encryptionCanceled();
+                                }
                             }
                         }
                         

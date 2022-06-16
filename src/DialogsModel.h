@@ -67,7 +67,8 @@ private:
     void resetModelContent ();
     void resetDialogsEncryption();
     
-    void insertDialogRow(std::unique_ptr<DialogEntityBase> &dialog);
+    void insertDialogRow(std::unique_ptr<DialogEntityBase> &dialog, 
+                         const bool toBack = true);
     
     bool getIndexOfDialogById(const DialogEntityBase::EntityId dialogId, 
                               uint32_t &index) const;

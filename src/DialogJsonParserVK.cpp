@@ -58,6 +58,29 @@ bool DialogJsonParserVK::jsonToDialogs(const QJsonValue &json,
     return true;
 }
 
+bool DialogJsonParserVK::jsonToFullName(const QJsonValue &json, 
+                                        QString &fullName)
+{
+    if (json.isNull())   return false;
+    if (!json.isObject()) return false;
+    
+    QJsonObject jsonObject{json.toObject()};
+    
+    if (!jsonObject.contains("first_name") || !jsonObject.contains("last_name"))
+        return false;
+    
+    if (!jsonObject["first_name"].isString() || !jsonObject["last_name"].isString())
+        return false;
+    
+    QString fullNameBuffer{jsonObject["first_name"].toString() + " " + jsonObject["last_name"].toString()};
+
+    if (fullNameBuffer.isEmpty()) return false;
+    
+    fullName = fullNameBuffer;
+    
+    return true;
+}
+
 bool DialogJsonParserVK::findPeerNameInProfilesGroups(const EntityInterface::EntityId peerId,
                                                       const QJsonArray &profilesJsonArray,
                                                       const QJsonArray &groupsJsonArray,

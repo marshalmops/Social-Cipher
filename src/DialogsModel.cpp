@@ -88,15 +88,20 @@ void DialogsModel::newMessagesOccured(std::vector<std::shared_ptr<MessageEntityB
         std::shared_ptr<DialogEntityBase> curDialog;
         
         if (!getDialogById(fromId, curDialog)) {
-            // FIXME: peerName is unknown
+            QString peerName{};
+            Error   err     {};
             
-            std::unique_ptr<DialogEntityBase> newDialog{std::make_unique<DialogEntityBase>(fromId)};
+            if ((err = m_dialogsFacade->getPeerName(fromId, peerName)).isValid()) {
+                emit errorOccured(err);
+                
+                return;
+            }
             
-            //message.reset();
+            std::unique_ptr<DialogEntityBase> newDialog{std::make_unique<DialogEntityBase>(fromId, peerName)};
             
             newDialog->appendBufferedMessage(message);
             
-            insertDialogRow(newDialog);
+            insertDialogRow(newDialog, false);
             
             continue;
         }
@@ -254,13 +259,20 @@ void DialogsModel::resetDialogsEncryption()
     }
 }
 
-void DialogsModel::insertDialogRow(std::unique_ptr<DialogEntityBase> &dialog)
+void DialogsModel::insertDialogRow(std::unique_ptr<DialogEntityBase> &dialog, const bool toBack)
 {
     auto curDialogsCount = rowCount();
     
-    emit beginInsertRows(QModelIndex(), curDialogsCount, curDialogsCount);
-    
-    m_dialogs.push_back(std::shared_ptr<DialogEntityBase>(dialog.release()));
+    if (toBack) {
+        emit beginInsertRows(QModelIndex(), curDialogsCount, curDialogsCount);
+        
+        m_dialogs.push_back(std::shared_ptr<DialogEntityBase>(dialog.release()));
+        
+    } else {
+        emit beginInsertRows(QModelIndex(), 0, 0);
+        
+        *(m_dialogs.emplace(m_dialogs.begin())) = std::shared_ptr<DialogEntityBase>(dialog.release());
+    }
     
     emit endInsertRows();
 }

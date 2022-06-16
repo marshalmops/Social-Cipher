@@ -47,6 +47,38 @@ Error NetworkDialogsFacadeVK::getDialogs(std::vector<std::unique_ptr<DialogEntit
 Error NetworkDialogsFacadeVK::getPeerName(const EntityInterface::EntityId peerId,
                                           QString &peerName)
 {
+    auto networkSettings = NetworkSettings::getInstance();
+    QString requestString{};
+    
+    requestString += NetworkSettings::getUrlBySocialNetwork(networkSettings->getSocialNetwork()) + QString("/users.get?");
+    requestString += QString("user_ids=") + QString::number(peerId) + '&';
+    requestString += QString("access_token=") + networkSettings->getToken() + '&';
+    requestString += QString("v=") + networkSettings->getAdditionalPropValue(NetworkFacadeVK::C_API_VERSION);
+    
+    QJsonObject jsonReply;
+    Error       err{"Getting peer data error!", true};
+    
+    if (!m_requestExecutor->executeGetRequest(QUrl(requestString, QUrl::TolerantMode), jsonReply))
+        return (m_lastError = err);
+    
+    if (jsonReply.contains("error"))
+        return (m_lastError = Error{QString("Getting peer data error! ") + jsonReply["error"].toString(), true});
+    
+    if (!jsonReply.contains("response"))                     return err;
+    if (!jsonReply["response"].isArray())                    return err;
+    if (!jsonReply["response"].toArray().first().isObject()) return err;
+    
+    jsonReply = jsonReply["response"].toArray().first().toObject();
+    
+    if (jsonReply.isEmpty()) return err;
+    
+    QString peerNameBuffer{};
+    
+    if (!m_dialogsParser->jsonToFullName(jsonReply, peerNameBuffer))
+        return err;
+    
+    peerName = peerNameBuffer;
+    
     return Error{};
 }
 

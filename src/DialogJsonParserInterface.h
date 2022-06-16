@@ -10,6 +10,8 @@ public:
     
     virtual bool jsonToDialogs (const QJsonValue &json,
                                 std::vector<std::unique_ptr<DialogEntityBase>> &dialogs) const = 0;
+    virtual bool jsonToFullName(const QJsonValue &json,
+                                QString &fullName) = 0;
 };
 
 #endif // DIALOGJSONPARSERINTERFACE_H

@@ -248,6 +248,8 @@ void DialogMessagesModel::appendMessage(std::shared_ptr<MessageEntityBase> messa
 
 void DialogMessagesModel::startEncryption()
 {
+    emit encryptionInitiated();
+    
     m_dialog->resetKeys();
     
     CipherKey publicKey,
@@ -323,6 +325,8 @@ void DialogMessagesModel::processCommand(const NetworkDialogMessagesFacadeInterf
 {
     switch (command) {
         case NetworkDialogMessagesFacadeInterface::CommandCode::CC_START_ENCRYPTION_INIT: {
+            emit encryptionInitiated();
+        
             m_dialog->resetKeys();
         
             CipherKey publicKey,
@@ -349,8 +353,6 @@ void DialogMessagesModel::processCommand(const NetworkDialogMessagesFacadeInterf
                                                             m_dialog->getPeerId());
             
             if (err.isValid()) emit errorOccured(err);
-            
-            //emit encryptionStarted();
             
             break;
         }

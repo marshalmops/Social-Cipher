@@ -12,6 +12,8 @@ public:
     
     virtual bool jsonToDialogs (const QJsonValue &json,
                                 std::vector<std::unique_ptr<DialogEntityBase>> &dialogs) const override;
+    virtual bool jsonToFullName(const QJsonValue &json,
+                                QString &fullName) override;
     
 private:
     bool findPeerNameInProfilesGroups(const EntityInterface::EntityId peerId,
